@@ -1,0 +1,5 @@
+# Ignore big model files
+./estimate_severity/data/processed_data/*.RDS
+./estimate_severity/downloaded_data/*
+
+

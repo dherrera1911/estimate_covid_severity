@@ -1,0 +1,104 @@
+"Age","Patients","Deaths","Study","Type","Location","EndPoint","meanAge"
+"16-39",865,131,"ICNARC","ICU","UK","2020-09-07",27.5
+"40-49",1442,311,"ICNARC","ICU","UK","2020-09-07",44.5
+"50-59",2973,991,"ICNARC","ICU","UK","2020-09-07",54.5
+"60-69",3156,1467,"ICNARC","ICU","UK","2020-09-07",64.5
+"70-79",1931,1145,"ICNARC","ICU","UK","2020-09-07",74.5
+"80+",328,191,"ICNARC","ICU","UK","2020-09-07",85
+"20-29",8,0,"Cummings","ICU","NYC, USA","2020-04-28",24.5
+"30-39",19,5,"Cummings","ICU","NYC, USA","2020-04-28",34.5
+"40-49",28,6,"Cummings","ICU","NYC, USA","2020-04-28",44.5
+"50-59",52,18,"Cummings","ICU","NYC, USA","2020-04-28",54.5
+"60-69",69,22,"Cummings","ICU","NYC, USA","2020-04-28",64.5
+"70-79",52,28,"Cummings","ICU","NYC, USA","2020-04-28",74.5
+"80-89",23,17,"Cummings","ICU","NYC, USA","2020-04-28",84.5
+"90+",6,5,"Cummings","ICU","NYC, USA","2020-04-28",90
+"16-39",220,29,"REVA Network","ICU","France, Belgium, Switzerland","2020-05-04",27.5
+"40-59",1480,302,"REVA Network","ICU","France, Belgium, Switzerland","2020-05-04",49.5
+"60-74",1972,611,"REVA Network","ICU","France, Belgium, Switzerland","2020-05-04",67
+"75+",572,306,"REVA Network","ICU","France, Belgium, Switzerland","2020-05-04",82.5
+"20-39",7512,2225,"Ranzani","ICU","Brazil","2020-08-15",29.5
+"40-49",9478,3503,"Ranzani","ICU","Brazil","2020-08-15",44.5
+"50-59",14034,6732,"Ranzani","ICU","Brazil","2020-08-15",54.5
+"60-69",18058,11372,"Ranzani","ICU","Brazil","2020-08-15",64.5
+"70-79",16848,12257,"Ranzani","ICU","Brazil","2020-08-15",74.5
+"80+",13757,10913,"Ranzani","ICU","Brazil","2020-08-15",85
+"0-10",12,1,"Gonzalez-Dambrauskas","ICU","Intercontinental","2020-04-23",5
+"11-18",5,0,"Gonzalez-Dambrauskas","ICU","Intercontinental","2020-04-23",14.5
+"0-1",19,0,"Prata-Barbosa","ICU","Brazil_2","2020-05-31",0.5
+"1-3",18,1,"Prata-Barbosa","ICU","Brazil_2","2020-05-31",2
+"3-5",7,0,"Prata-Barbosa","ICU","Brazil_2","2020-05-31",4
+"5-12",19,0,"Prata-Barbosa","ICU","Brazil_2","2020-05-31",8.5
+"12-18",14,1,"Prata-Barbosa","ICU","Brazil_2","2020-05-31",15
+"18-54",41,3,"Oliveira","ICU","Florida, USA","2020-05-18",36
+"55-64",36,5,"Oliveira","ICU","Florida, USA","2020-05-18",59.5
+"65-74",34,8,"Oliveira","ICU","Florida, USA","2020-05-18",69.5
+"75+",20,10,"Oliveira","ICU","Florida, USA","2020-05-18",82.5
+"0-9",26,0,"Richardson","Hospitalized","NYC, USA","2020-04-04",4.5
+"10-19",8,0,"Richardson","Hospitalized","NYC, USA","2020-04-04",14.5
+"20-29",97,4,"Richardson","Hospitalized","NYC, USA","2020-04-04",24.5
+"30-39",211,8,"Richardson","Hospitalized","NYC, USA","2020-04-04",34.5
+"40-49",352,22,"Richardson","Hospitalized","NYC, USA","2020-04-04",44.5
+"50-59",515,53,"Richardson","Hospitalized","NYC, USA","2020-04-04",54.5
+"60-69",533,84,"Richardson","Hospitalized","NYC, USA","2020-04-04",64.5
+"70-79",451,145,"Richardson","Hospitalized","NYC, USA","2020-04-04",74.5
+"80-89",313,170,"Richardson","Hospitalized","NYC, USA","2020-04-04",84.5
+"90+",128,67,"Richardson","Hospitalized","NYC, USA","2020-04-04",90
+"18-59",2896,134,"Karagiannidis","Hospitalized","Germany","2020-04-19",38.5
+"60-69",1621,241,"Karagiannidis","Hospitalized","Germany","2020-04-19",64.5
+"70-79",2158,572,"Karagiannidis","Hospitalized","Germany","2020-04-19",74.5
+"80+",3346,1280,"Karagiannidis","Hospitalized","Germany","2020-04-19",85
+"0-20",789,5,"Salje","Hospitalized","France","2020-05-13",10
+"20-29",2149,24,"Salje","Hospitalized","France","2020-05-13",24.5
+"30-39",4660,89,"Salje","Hospitalized","France","2020-05-13",34.5
+"40-49",6303,208,"Salje","Hospitalized","France","2020-05-13",44.5
+"50-59",9724,632,"Salje","Hospitalized","France","2020-05-13",54.5
+"60-69",12236,1542,"Salje","Hospitalized","France","2020-05-13",64.5
+"70-79",13543,2844,"Salje","Hospitalized","France","2020-05-13",74.5
+"80+",15370,4857,"Salje","Hospitalized","France","2020-05-13",85
+"50-59",1978,100,"Public_data","Hospitalized","Netherlands","2020-05-11",54.5
+"60-69",2618,353,"Public_data","Hospitalized","Netherlands","2020-05-11",64.5
+"70-79",3287,942,"Public_data","Hospitalized","Netherlands","2020-05-11",74.5
+"80-89",2015,913,"Public_data","Hospitalized","Netherlands","2020-05-11",84.5
+"90+",288,142,"Public_data","Hospitalized","Netherlands","2020-05-11",90
+"20-39",30603,3780,"Ranzani","Hospitalized","Brazil","2020-08-15",29.5
+"40-49",33968,6162,"Ranzani","Hospitalized","Brazil","2020-08-15",44.5
+"50-59",43376,11818,"Ranzani","Hospitalized","Brazil","2020-08-15",54.5
+"60-69",48270,20317,"Ranzani","Hospitalized","Brazil","2020-08-15",64.5
+"70-79",41434,22651,"Ranzani","Hospitalized","Brazil","2020-08-15",74.5
+"80+",34385,22787,"Ranzani","Hospitalized","Brazil","2020-08-15",85
+"0-4",84,1,"Docherty","Hospitalized","UK","2020-04-19",2
+"5-9",21,0,"Docherty","Hospitalized","UK","2020-04-19",7
+"10-14",12,0,"Docherty","Hospitalized","UK","2020-04-19",12
+"15-19",25,1,"Docherty","Hospitalized","UK","2020-04-19",17
+"20-24",41,1,"Docherty","Hospitalized","UK","2020-04-19",22
+"25-29",58,5,"Docherty","Hospitalized","UK","2020-04-19",27
+"30-34",104,5,"Docherty","Hospitalized","UK","2020-04-19",32
+"35-39",170,11,"Docherty","Hospitalized","UK","2020-04-19",37
+"40-44",241,19,"Docherty","Hospitalized","UK","2020-04-19",42
+"45-49",346,37,"Docherty","Hospitalized","UK","2020-04-19",47
+"50-54",478,63,"Docherty","Hospitalized","UK","2020-04-19",52
+"55-59",583,124,"Docherty","Hospitalized","UK","2020-04-19",57
+"60-64",661,184,"Docherty","Hospitalized","UK","2020-04-19",62
+"65-69",696,243,"Docherty","Hospitalized","UK","2020-04-19",67
+"70-74",947,451,"Docherty","Hospitalized","UK","2020-04-19",72
+"75-79",1040,563,"Docherty","Hospitalized","UK","2020-04-19",77
+"80-84",1119,653,"Docherty","Hospitalized","UK","2020-04-19",82
+"85-89",861,552,"Docherty","Hospitalized","UK","2020-04-19",87
+"90+",493,356,"Docherty","Hospitalized","UK","2020-04-19",90
+"0-10",15,2,"Berenguer","Hospitalized","Spain","2020-04-17",5
+"11-20",18,0,"Berenguer","Hospitalized","Spain","2020-04-17",15.5
+"21-30",91,2,"Berenguer","Hospitalized","Spain","2020-04-17",25.5
+"31-40",215,5,"Berenguer","Hospitalized","Spain","2020-04-17",35.5
+"41-50",391,18,"Berenguer","Hospitalized","Spain","2020-04-17",45.5
+"51-60",551,68,"Berenguer","Hospitalized","Spain","2020-04-17",55.5
+"61-70",791,167,"Berenguer","Hospitalized","Spain","2020-04-17",65.5
+"71-80",1032,357,"Berenguer","Hospitalized","Spain","2020-04-17",75.5
+"81-90",744,389,"Berenguer","Hospitalized","Spain","2020-04-17",85.5
+"91+",183,122,"Berenguer","Hospitalized","Spain","2020-04-17",90.5
+"1-18",14,0,"Maquilon","Hospitalized","Chile","2020-06-04",9.5
+"19-39",144,3,"Maquilon","Hospitalized","Chile","2020-06-04",29
+"40-49",99,2,"Maquilon","Hospitalized","Chile","2020-06-04",44.5
+"50-59",91,4,"Maquilon","Hospitalized","Chile","2020-06-04",54.5
+"60-69",89,8,"Maquilon","Hospitalized","Chile","2020-06-04",64.5
+"70+",65,37,"Maquilon","Hospitalized","Chile","2020-06-04",80
