@@ -30,18 +30,16 @@ parameters {
 
 transformed parameters{
   vector<lower=0, upper=1>[N] outcomeRate;  // variable to contain % outcome
-  //vector<lower=0, upper=1>[N] prevalence;
   outcomeRate = inv_logit(locationIntercept[location] + locationSlope[location] .* ageVec);  // logistic regression model 
-  //prevalence = prevalence_raw + lowerBoundPrev;
 }
 
 model {
   ageSlope ~ normal(2, 1); // normal(0, 0.1);
   print("Is this thing on?");
-  ageSlopeSigma ~ exponential(0.5);
+  ageSlopeSigma ~ exponential(1);
   locationSlope ~ normal(ageSlope, ageSlopeSigma);
   intercept ~ normal(-6, 2);
-  interceptSigma ~ exponential(0.5);
+  interceptSigma ~ exponential(1);
   locationIntercept ~ normal(intercept, interceptSigma);
   prevalence_raw ~ gamma(seroprevShape, seroprevRate);
   for (n in 1:N) {

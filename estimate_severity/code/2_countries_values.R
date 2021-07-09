@@ -660,13 +660,8 @@ Hospitalized_Atlanta <- c(18, 62, 79, 115, 172, 180, 260)
 ICU_Atlanta <- c(4, 13, 14, 33, 44, 57, 74)
 deaths_Atlanta <- c(2, 3, 2, 16, 33, 69, 170)
 
-# Official hospital count at May 04
-fultonCasesMay4 <- sum(c(1398, 365, 255, 159, 98, 95, 87, 74, 55, 44, 30, 17, 14))
-nHospMay4 <- round(fultonCasesMay4 * 0.179)
-nICUMay4 <- round(fultonCasesMay4 * 0.049)
-nDeathsMay4 <- round(fultonCasesMay4 * 0.040)
-
-fultonCasesMay8 <-3321
+# Official hospital count at May 08
+fultonCasesMay8 <- 3321
 nHospMay8 <- round(fultonCasesMay8 * 0.184)
 nICUMay8 <- round(fultonCasesMay8 * 0.051)
 nDeathsMay8 <- round(fultonCasesMay8 * 0.041)

@@ -101,6 +101,7 @@ outcomeFitDf$Outcome_type <- factor(outcomeFitDf$Outcome_type,
                                        levels=outcome, labels=outcome2)
 
 
+
 # https://www.sciencemag.org/news/2021/06/israel-reports-link-between-rare-cases-heart-inflammation-and-covid-19-vaccination
 myocarditisProp <- c(1/6000, 1/3000)
 ageRangeMyo <- c(16, 24)
@@ -152,60 +153,19 @@ ggsave(serologyPlotName, serologyPlot, width=18, height=9.5, units="cm")
 ########################
 # Plot serology model params
 ########################
-mainParams <- c("ageSlope", "ageSlopeSigma", "intercept", "interceptSigma")
-
-# Get param summary statistics
-modelSummary <- list()
-for (no in c(1:length(outcome))) {
-  oStr <- outcome[no]
-  modelSummary[[oStr]] <- summary(serologyModels$model[[oStr]],
-                          pars=mainParams)
-}
-
-# Compare ages
-ratiosAges <- data.frame()
-for (no in c(1:length(outcome))) {
-  oStr <- outcome[no]
-  agesComparison <- proportion_samples(model=serologyModels$model[[oStr]],
-           ageVec=c(22.5, 72.5),
-           meanAge=serologyModels$meanAge[[oStr]],
-           sdAge=serologyModels$sdAge[[oStr]])
-  ratiosTemp <- agesComparison$samples %>%
-    dplyr::select(., -age) %>%
-    tidyr::pivot_wider(., names_from=ageInd, values_from=proportion,
-                       names_prefix="age") %>%
-    dplyr::mutate(., ratio=age2/age1)
-  tempDf <- data.frame(meanRatio=mean(ratiosTemp$ratio),
-                       lowerRatio=quantile(ratiosTemp$ratio, p=0.025),
-                       upperRatio=quantile(ratiosTemp$ratio, p=0.975))
-  ratiosAges <- rbind(ratiosAges, tempDf)
-}
-
-
-# Compare to vaccine
-vaccineRatio <- data.frame()
-for (no in c(1:length(outcome))) {
-  oStr <- outcome[no]
-  agesComparison <- proportion_samples(model=serologyModels$model[[oStr]],
-           ageVec=c(20, 20),
-           meanAge=serologyModels$meanAge[[oStr]],
-           sdAge=serologyModels$sdAge[[oStr]])
-  ratiosTemp <- agesComparison$samples %>%
-    dplyr::select(., -age) %>%
-    dplyr::filter(., ageInd==1) %>%
-    dplyr::mutate(., propRatio=proportion/(1/4000))
-  tempDf <- data.frame(meanRatio=mean(ratiosTemp$propRatio),
-                       lowerRatio=quantile(ratiosTemp$propRatio, p=0.025),
-                       upperRatio=quantile(ratiosTemp$propRatio, p=0.975))
-  vaccineRatio <- rbind(vaccineRatio, tempDf)
-}
-
 
 # prior functions
 gaussian <- function(x, mu, sigma){
   f <- (1/sigma*sqrt(2*pi))*exp(-0.5*((x-mu)/sigma)^2)
 }
 exponential <- function(x, lambda){lambda*exp(-lambda*x)}
+
+
+mainParams <- c("ageSlope", "ageSlopeSigma", "intercept", "interceptSigma")
+
+############
+# plot serology Priors and trace
+############
 outcome <- c("Hospitalized", "ICU", "Deaths")
 x1 <- seq(-1, 5, 0.02)
 prior_ageSlope <- data.frame(value=x1, dens=gaussian(x1, mu=2, sigma=1),
@@ -222,7 +182,6 @@ prior_interceptSigma <- data.frame(value=x4, dens=exponential(x4, lambda=0.5),
 priorDf <- rbind(prior_ageSlope, prior_ageSlopeSigma, prior_intercept,
                  prior_interceptSigma)
 
-
 posteriorSerology <- data.frame()
 for (no in c(1:length(outcome))) {
   oStr <- outcome[no]
@@ -233,7 +192,6 @@ for (no in c(1:length(outcome))) {
 }
 posteriorSerology$Outcome_type <- factor(posteriorSerology$Outcome_type,
                                          levels=outcome)
-
 
 posteriorSerologyPlot <- posteriorSerology %>%
   ggplot(., aes(x=.value, color=Outcome_type, fill=Outcome_type,
@@ -280,7 +238,6 @@ ggsave("../data/plots/3_serology_chains.png", serologyTrace,
 #ggsave(serologySamplesPlotName, serologySamplesPlot,
 #       width=29, height=10, units="cm")
 #
-
 exportFit <- dplyr::mutate(outcomeFitDf, Percentage=signif(outcomeProp*100, digits=3),
                            Percentage_L=signif(outcome_L*100, digits=3),
                            Percentage_H=signif(outcome_H*100, digits=3)) %>%
@@ -359,7 +316,7 @@ lethalityPlot <- lethalityData %>%
   ylab("Mortality (%)")
 
 ggsave("../data/plots/4_hospital_lethality_regression.png", lethalityPlot,
-       width=10, height=14, units="cm")
+       width=30, height=11, units="cm")
 
 
 #lethalitySamplesDf$Type <- factor(lethalitySamplesDf$Type,
@@ -402,7 +359,6 @@ outcomePropLit$Outcome_type <- outcomePropLit$Type
 literaturePropPlot <- outcomePropLit %>%
   ggplot(., aes(x=meanAge, y=Proportion, color=Study)) +
   geom_point(size=locPointSize) +
-  geom_errorbar(aes(x=meanAge, ymin=Proportion_L, ymax=Proportion_H)) +
   geom_line(alpha=locLineAlpha, size=locLineSize) +
   facet_rep_grid(.~Outcome_type, repeat.tick.labels="left") +
   geom_line(data=outcomeFitDf, aes(y=outcomeProp*100),

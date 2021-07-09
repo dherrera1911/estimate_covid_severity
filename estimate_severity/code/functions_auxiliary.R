@@ -149,7 +149,8 @@ proportion_samples <- function(model, ageVec,
                                slopeName="ageSlope",
                                interceptName="intercept",
                                meanAge=0,
-                               sdAge=1) {
+                               sdAge=1,
+                               link="logit") {
   stdAgeVec <- (ageVec-meanAge)/sdAge
   posterior <- rstan::extract(model)
   fitSampleMat <- matrix(nrow=length(ageVec), ncol=0)
@@ -157,7 +158,12 @@ proportion_samples <- function(model, ageVec,
     intSample <- posterior[[interceptName]][n]
     slopeSample <- posterior[[slopeName]][n]
     lin <- intSample + slopeSample * stdAgeVec
-    fitProp <- exp(lin)/(1+exp(lin))
+    if (link=="logit") {
+      fitProp <- exp(lin)/(1+exp(lin))
+    } else {
+      fitProp <- VGAM::probitlink(theta=lin, inverse=TRUE)
+    }
+
     fitSampleMat <- cbind(fitSampleMat, as.matrix(fitProp))
   }
   meanProp <- rowMeans(fitSampleMat) 

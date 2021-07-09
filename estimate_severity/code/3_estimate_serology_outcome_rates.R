@@ -10,20 +10,29 @@ source("./functions_auxiliary.R")
 source("./stan_utility.R")
 set.seed(2961)
 
-#savingName <- "../data/processed_data/3_serology_fits.RDS"
-#countryData <- read.csv("../data/collected_data/locations_serology_data.csv",
+savingName <- "../data/processed_data/3_serology_fits.RDS"
+countryData <- read.csv("../data/collected_data/locations_serology_data.csv",
+                        stringsAsFactors=FALSE) %>%
+  as_tibble(.) %>%
+  dplyr::mutate(., Prevalence=Prevalence/100, PrevalenceL=PrevalenceL/100,
+                PrevalenceH=PrevalenceH/100)
+
+
+#savingName <- "../data/processed_data/3_serology_fits_corrected_Phi.RDS"
+#countryData <- read.csv("../data/collected_data/locations_serology_data_corrected.csv",
 #                        stringsAsFactors=FALSE) %>%
 #  as_tibble(.) %>%
 #  dplyr::mutate(., Prevalence=Prevalence/100, PrevalenceL=PrevalenceL/100,
 #                PrevalenceH=PrevalenceH/100)
 
+#savingName <- "../data/processed_data/3_serology_fits_u50.RDS"
+#countryData <- read.csv("../data/collected_data/locations_serology_data.csv",
+#                        stringsAsFactors=FALSE) %>%
+#  as_tibble(.) %>%
+#  dplyr::mutate(., Prevalence=Prevalence/100, PrevalenceL=PrevalenceL/100,
+#                PrevalenceH=PrevalenceH/100) %>%
+#  dplyr::filter(., meanAge<=50)
 
-savingName <- "../data/processed_data/3_serology_fits_corrected.RDS"
-countryData <- read.csv("../data/collected_data/locations_serology_data_corrected.csv",
-                        stringsAsFactors=FALSE) %>%
-  as_tibble(.) %>%
-  dplyr::mutate(., Prevalence=Prevalence/100, PrevalenceL=PrevalenceL/100,
-                PrevalenceH=PrevalenceH/100)
 
 ##############
 # Fit gamma distribution to seroprevalences
@@ -109,8 +118,10 @@ for (no in c(1:length(outcome))) {
                     outcomes=outcomeData[[oStr]][[oStr]])
 
   # Fit model
+  print(paste("Fitting:", oStr))
   model[[oStr]] <- rstan::sampling(outcome_reg, data=outcomeDataList[[oStr]],
-                             chains=4, iter=5000, refresh=0)
+                             chains=4, iter=5000, refresh=0,
+                             verbose=TRUE, cores=4)
 
   locationKey[[oStr]] <- unique(dplyr::select(outcomeData[[oStr]],
                                               Location, locationNum))
@@ -121,8 +132,8 @@ modelList <- list(model=model, locationKey=locationKey,
 
 saveRDS(modelList, savingName)
 
-#
-#posteriorTemp <- tidybayes::gather_draws(model$Deaths, ageSlope,
+
+#posteriorTemp <- tidybayes::gather_draws(model$Hospitalized, ageSlope,
 #                                         ageSlopeSigma, intercept, interceptSigma) 
 #
 #serologyTrace <- dplyr::mutate(posteriorTemp, .chain=factor(.chain))  %>%
@@ -131,4 +142,4 @@ saveRDS(modelList, savingName)
 #  facet_grid(.~.variable, scales="free_y") +
 #  theme_bw()
 #
-#
+

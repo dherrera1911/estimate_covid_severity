@@ -28,32 +28,15 @@ dataAlpha <- 0.5
 ############################
 ############################
 
-# load data and models
-# Uncorrected data
-#countryData <- read.csv("../data/collected_data/locations_serology_data.csv",
-#                        stringsAsFactors=FALSE) %>%
-#  as_tibble(.)
-#serologyModels <- readRDS("../data/processed_data/3_serology_fits.RDS")
-#serologyPlotName <- "../data/plots/3_serology_regression.png"
-#serologySamplesPlotName <- "../data/plots/3_serology_samples.png"
-
 # Corrected data
 countryData <- read.csv("../data/collected_data/locations_serology_data_corrected.csv",
                         stringsAsFactors=FALSE) %>%
   as_tibble(.)
 serologyModels <- readRDS("../data/processed_data/3_serology_fits_corrected.RDS")
 #serologyModels <- readRDS("../data/processed_data/3_serology_fits_corrected_Phi.RDS")
-serologyPlotName <- "../data/plots/3_serology_regression_corrected.png"
+serologyPlotName <- "../data/plots/figure1.png"
 serologySamplesPlotName <- "../data/plots/3_serology_samples_corrected.png"
 serologyCsvName <- "../data/processed_data/3_serology_fits_corrected.csv"
-
-
-## Under 50 fit
-#countryData <- read.csv("../data/collected_data/locations_serology_data.csv",
-#                        stringsAsFactors=FALSE) %>%
-#  as_tibble(.)
-#serologyModels <- readRDS("../data/processed_data/3_serology_fits_u50.RDS")
-#serologyPlotName <- "../data/plots/3_serology_regression_u50.png"
 
 # predefine some variables
 outcome <- c("Hospitalized", "ICU", "Deaths")
@@ -69,7 +52,7 @@ longCountryData <- tidyr::pivot_longer(data=countryData,
 longCountryData$Outcome_type <- factor(longCountryData$Outcome_type,
                                        levels=outcome, labels=outcome2)
 
-levsType <- unique(longCountryData$Type)
+levsType <- levels(factor(longCountryData$Type))
 labelsType <- c("Representative seroprevalence", "Convenience seroprevalence",
                 "Comprehensive testing")
 longCountryData$Type <- factor(longCountryData$Type,
@@ -149,12 +132,12 @@ serologyPlot <- longCountryData %>%
 ggsave(serologyPlotName, serologyPlot, width=18, height=9.5, units="cm")
 
 
-########################
-# Plot serology model params
-########################
-mainParams <- c("ageSlope", "ageSlopeSigma", "intercept", "interceptSigma")
+##############
+# Extract serology data summary statistics
+##############
 
 # Get param summary statistics
+mainParams <- c("ageSlope", "ageSlopeSigma", "intercept", "interceptSigma")
 modelSummary <- list()
 for (no in c(1:length(outcome))) {
   oStr <- outcome[no]
@@ -201,91 +184,13 @@ for (no in c(1:length(outcome))) {
 }
 
 
-# prior functions
-gaussian <- function(x, mu, sigma){
-  f <- (1/sigma*sqrt(2*pi))*exp(-0.5*((x-mu)/sigma)^2)
-}
-exponential <- function(x, lambda){lambda*exp(-lambda*x)}
-outcome <- c("Hospitalized", "ICU", "Deaths")
-x1 <- seq(-1, 5, 0.02)
-prior_ageSlope <- data.frame(value=x1, dens=gaussian(x1, mu=2, sigma=1),
-                             .variable="ageSlope")
-x2 <- seq(0, 4.5, 0.02)
-prior_ageSlopeSigma <- data.frame(value=x2, dens=exponential(x2, lambda=0.5),
-                                  .variable="ageSlopeSigma")
-x3 <- seq(-8, 0, 0.02)
-prior_intercept <- data.frame(value=x3, dens=gaussian(x3, mu=-6, sigma=2),
-                              .variable="intercept")
-x4 <- seq(0, 4.5, 0.02)
-prior_interceptSigma <- data.frame(value=x4, dens=exponential(x4, lambda=0.5),
-                                   .variable="interceptSigma")
-priorDf <- rbind(prior_ageSlope, prior_ageSlopeSigma, prior_intercept,
-                 prior_interceptSigma)
-
-
-posteriorSerology <- data.frame()
-for (no in c(1:length(outcome))) {
-  oStr <- outcome[no]
-  posteriorTemp <- tidybayes::gather_draws(serologyModels$model[[oStr]], ageSlope,
-                                           ageSlopeSigma, intercept, interceptSigma) %>%
-    dplyr::mutate(., Outcome_type=oStr)
-  posteriorSerology <- rbind(posteriorSerology, posteriorTemp)
-}
-posteriorSerology$Outcome_type <- factor(posteriorSerology$Outcome_type,
-                                         levels=outcome)
-
-
-posteriorSerologyPlot <- posteriorSerology %>%
-  ggplot(., aes(x=.value, color=Outcome_type, fill=Outcome_type,
-                facet=.variable)) +
-  #geom_density(alpha=0.6) +
-  stat_density(geom="area", position="identity", alpha=0.6) +
-  stat_density(geom="line", position="identity") +
-  geom_line(data=priorDf, aes(x=value, y=dens), size=1.5, inherit.aes=FALSE) +
-  facet_grid(.~.variable, scales="free") +
-  theme_bw()
-
-serologyTrace <- dplyr::mutate(posteriorSerology, .chain=factor(.chain))  %>%
-  ggplot(., aes(x=.iteration, y=.value, color=.chain)) +
-  geom_line() +
-  facet_grid(.variable~Outcome_type, scales="free_y") +
-  theme_bw()
-
-ggsave("../data/plots/3_serology_param_posterior.png", posteriorSerologyPlot, 
-       width=30, height=12, units="cm", device="png")
-
-ggsave("../data/plots/3_serology_chains.png", serologyTrace, 
-       width=30, height=20, units="cm")
-
-
-
-#
-#serologySamplesDf$Outcome_type <- factor(serologySamplesDf$Outcome_type,
-#                                       levels=outcome)
-#serologySamplesPlot <- serologySamplesDf %>%
-#  ggplot(., aes(x=meanAge, y=proportion*100, group=sample, facet=Outcome_type)) +
-#  geom_line(alpha=sampleLineAlpha, size=sampleLineSize, color="#33ADFF") +
-#  facet_grid(.~Outcome_type) +
-#  scale_y_continuous(trans='log10', labels=scaleFun) +
-#  geom_line(data=outcomeFitDf, aes(x=meanAge, y=outcomeProp*100),
-#            color="black", linetype="solid", size=regLineSize, inherit.aes=FALSE) +
-##  geom_ribbon(data=outcomeFitDf,
-##              aes(x=meanAge,ymin=outcome_L*100, ymax=outcome_H*100),
-##              alpha=0.2, colour=NA, show.legend=FALSE,
-##              inherit.aes=FALSE) +
-#  theme_bw() +
-#  xlab("Age") +
-#  ylab("% outcome")
-#
-#ggsave(serologySamplesPlotName, serologySamplesPlot,
-#       width=29, height=10, units="cm")
-#
-
 exportFit <- dplyr::mutate(outcomeFitDf, Percentage=signif(outcomeProp*100, digits=3),
                            Percentage_L=signif(outcome_L*100, digits=3),
                            Percentage_H=signif(outcome_H*100, digits=3)) %>%
   dplyr::select(., -outcomeProp, -outcome_L, -outcome_H)
+
 write.csv(exportFit, file=serologyCsvName, row.names=FALSE)
+
 
 ############################
 ############################
@@ -362,27 +267,6 @@ ggsave("../data/plots/4_hospital_lethality_regression.png", lethalityPlot,
        width=10, height=14, units="cm")
 
 
-#lethalitySamplesDf$Type <- factor(lethalitySamplesDf$Type,
-#                                       levels=letType)
-#lethalitySamplesPlot <- lethalitySamplesDf %>%
-#  ggplot(., aes(x=meanAge, y=proportion*100, group=sample, facet=Type)) +
-#  geom_line(alpha=sampleLineAlpha, size=sampleLineSize, color="#33ADFF") +
-#  scale_y_continuous(trans='log10', labels=scaleFun) +
-#  geom_line(data=lethalityFitDf, aes(x=meanAge, y=outcomeProp*100),
-#            color="black", linetype="solid", size=regLineSize, inherit.aes=FALSE) +
-#  facet_grid(.~Type) +
-#  geom_ribbon(data=outcomeFitDf,
-#              aes(x=meanAge,ymin=outcome_L*100, ymax=outcome_H*100),
-#              alpha=0.2, colour=NA, show.legend=FALSE,
-#              inherit.aes=FALSE) +
-#  theme_bw() +
-#  xlab("Age") +
-#  ylab("% outcome")
-#
-#ggsave("../data/plots/4_lethality_samples.png", lethalitySamplesPlot,
-#       width=29, height=10, units="cm")
-
-
 ############################
 ############################
 ###
@@ -402,8 +286,9 @@ outcomePropLit$Outcome_type <- outcomePropLit$Type
 literaturePropPlot <- outcomePropLit %>%
   ggplot(., aes(x=meanAge, y=Proportion, color=Study)) +
   geom_point(size=locPointSize) +
-  geom_errorbar(aes(x=meanAge, ymin=Proportion_L, ymax=Proportion_H)) +
-  geom_line(alpha=locLineAlpha, size=locLineSize) +
+  geom_errorbar(aes(x=meanAge, ymin=Proportion_L, ymax=Proportion_H), size=0.5,
+                alpha=locLineAlpha*0.7) +
+  #geom_line(alpha=locLineAlpha, size=locLineSize) +
   facet_rep_grid(.~Outcome_type, repeat.tick.labels="left") +
   geom_line(data=outcomeFitDf, aes(y=outcomeProp*100),
             color="black", linetype="solid", size=regLineSize) +
@@ -446,48 +331,4 @@ figure2 <- ggarrange(plotlist=list(lethalityPlot, literaturePropPlot),
 
 ggsave("../data/plots/figure2.png", figure2, width=20, height=10, units="cm")
 
-############################
-############################
-###
-### Plot models params
-###
-############################
-############################
-
-
-############
-# plot hospital lethality Priors and trace
-############
-posteriorLethality <- data.frame()
-lethOutcome <- c("Hospitalized", "ICU")
-for (no in c(1:length(lethOutcome))) {
-  oStr <- lethOutcome[no]
-  posteriorTemp <- tidybayes::gather_draws(lethalityModels$model[[oStr]], ageSlope,
-                                           ageSlopeSigma, intercept, interceptSigma) %>%
-    dplyr::mutate(., Outcome_type=oStr)
-  posteriorLethality <- rbind(posteriorLethality, posteriorTemp)
-}
-posteriorLethality$Outcome_type <- factor(posteriorLethality$Outcome_type,
-                                         levels=outcome)
-
-posteriorLethalityPlot <- posteriorLethality %>%
-  ggplot(., aes(x=.value, color=Outcome_type, fill=Outcome_type,
-                facet=.variable)) +
-  stat_density(geom="area", position="identity", alpha=0.6) +
-  stat_density(geom="line", position="identity") +
-  geom_line(data=priorDf, aes(x=value, y=dens), size=1.5, inherit.aes=FALSE) +
-  facet_grid(.~.variable, scales="free") +
-  theme_bw()
-
-lethalityTrace <- dplyr::mutate(posteriorLethality, .chain=factor(.chain))  %>%
-  ggplot(., aes(x=.iteration, y=.value, color=.chain)) +
-  geom_line() +
-  facet_grid(.variable~Outcome_type, scales="free_y") +
-  theme_bw()
-
-ggsave("../data/plots/4_lethality_param_posterior.png", posteriorLethalityPlot, 
-       width=30, height=12, units="cm", device="png")
-
-ggsave("../data/plots/4_lethality_chains.png", lethalityTrace, 
-       width=30, height=20, units="cm")
 

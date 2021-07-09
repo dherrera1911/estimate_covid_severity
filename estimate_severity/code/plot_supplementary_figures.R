@@ -30,105 +30,89 @@ dataAlpha <- 0.5
 
 # load data and models
 # Uncorrected data
-#countryData <- read.csv("../data/collected_data/locations_serology_data.csv",
-#                        stringsAsFactors=FALSE) %>%
-#  as_tibble(.)
-#serologyModels <- readRDS("../data/processed_data/3_serology_fits.RDS")
-#serologyPlotName <- "../data/plots/3_serology_regression.png"
-#serologySamplesPlotName <- "../data/plots/3_serology_samples.png"
+countryDataUncorrected <- read.csv("../data/collected_data/locations_serology_data.csv",
+                        stringsAsFactors=FALSE) %>%
+  as_tibble(.) %>%
+  dplyr::mutate(., processing="Uncorrected")
+serologyModelsUncorrected <- readRDS("../data/processed_data/3_serology_fits.RDS")
 
 # Corrected data
-countryData <- read.csv("../data/collected_data/locations_serology_data_corrected.csv",
+countryDataCorrected <- read.csv("../data/collected_data/locations_serology_data_corrected.csv",
                         stringsAsFactors=FALSE) %>%
-  as_tibble(.)
-serologyModels <- readRDS("../data/processed_data/3_serology_fits_corrected.RDS")
-#serologyModels <- readRDS("../data/processed_data/3_serology_fits_corrected_Phi.RDS")
-serologyPlotName <- "../data/plots/3_serology_regression_corrected.png"
-serologySamplesPlotName <- "../data/plots/3_serology_samples_corrected.png"
-serologyCsvName <- "../data/processed_data/3_serology_fits_corrected.csv"
+  as_tibble(.) %>%
+  dplyr::mutate(., processing="Corrected")
+serologyModelsCorrected <- readRDS("../data/processed_data/3_serology_fits_corrected.RDS")
 
+countryData <- dplyr::select(countryDataCorrected,
+                             all_of(names(countryDataUncorrected))) %>%
+  rbind(., countryDataUncorrected)
 
-## Under 50 fit
-#countryData <- read.csv("../data/collected_data/locations_serology_data.csv",
-#                        stringsAsFactors=FALSE) %>%
-#  as_tibble(.)
-#serologyModels <- readRDS("../data/processed_data/3_serology_fits_u50.RDS")
-#serologyPlotName <- "../data/plots/3_serology_regression_u50.png"
+serologyModels <- list(Corrected=serologyModelsCorrected,
+                    Uncorrected=serologyModelsUncorrected)
+
 
 # predefine some variables
 outcome <- c("Hospitalized", "ICU", "Deaths")
 outcome2 <- c("Severe disease", "Critical disease", "Fatal disease")
+labelsType <- c("Representative seroprevalence", "Convenience seroprevalence",
+                "Comprehensive testing")
 
-# pivot longer the serology data
+# enlongate data
 longCountryData <- tidyr::pivot_longer(data=countryData, 
                                        cols=all_of(outcome),
                                        names_to="Outcome_type",
                                        values_to="Outcomes") %>%
   dplyr::filter(., !is.na(Outcomes)) %>%
   dplyr::mutate(., Location=factor(Location))
+
 longCountryData$Outcome_type <- factor(longCountryData$Outcome_type,
                                        levels=outcome, labels=outcome2)
-
-levsType <- unique(longCountryData$Type)
-labelsType <- c("Representative seroprevalence", "Convenience seroprevalence",
-                "Comprehensive testing")
+levsType <- levels(factor(longCountryData$Type))
 longCountryData$Type <- factor(longCountryData$Type,
                                        levels=levsType,
                                        labels=labelsType)
 
-# extract model posteriors and put into data frame
-ageVec <- seq(2.5, 90, 5)
-serologyPosterior <- list()
+# pivot longer the serology data
 outcomeFitDf <- NULL
-serologySamplesDf <- tibble()
-for (no in c(1:length(outcome))) {
-  oStr <- outcome[no]
-  stdAgeVec <- (ageVec-serologyModels$meanAge[[oStr]])/serologyModels$sdAge[[oStr]]
-  serologyPosterior[[oStr]] <- proportion_samples(model=serologyModels$model[[oStr]],
-                                                  ageVec=stdAgeVec)
-  tempFitDf <- data.frame(meanAge=ageVec,
-                          outcomeProp=serologyPosterior[[oStr]]$prop_mean,
-                          outcome_L=serologyPosterior[[oStr]]$prop_L,
-                          outcome_H=serologyPosterior[[oStr]]$prop_H,
-                          Outcome_type=oStr)
-  outcomeFitDf <- rbind(outcomeFitDf, tempFitDf)
-  tempSamplesDf <- serologyPosterior[[oStr]]$samples
-  tempSamplesDf$meanAge <- rep(ageVec, max(tempSamplesDf$sample))
-  tempSamplesDf$Outcome_type <- oStr
-  serologySamplesDf <- as_tibble(rbind(tempSamplesDf, serologySamplesDf))
+for (n in names(serologyModels)) {
+  # extract model posteriors and put into data frame
+  ageVec <- seq(2.5, 90, 5)
+  serologyPosterior <- list()
+  serologySamplesDf <- tibble()
+  for (no in c(1:length(outcome))) {
+    oStr <- outcome[no]
+    stdAgeVec <- (ageVec-serologyModels[[n]]$meanAge[[oStr]])/serologyModels[[n]]$sdAge[[oStr]]
+    serologyPosterior[[oStr]] <- proportion_samples(model=serologyModels[[n]]$model[[oStr]],
+                                                    ageVec=stdAgeVec)
+    tempFitDf <- data.frame(meanAge=ageVec,
+                            outcomeProp=serologyPosterior[[oStr]]$prop_mean,
+                            outcome_L=serologyPosterior[[oStr]]$prop_L,
+                            outcome_H=serologyPosterior[[oStr]]$prop_H,
+                            Outcome_type=oStr,
+                            processing=n)
+    outcomeFitDf <- rbind(outcomeFitDf, tempFitDf)
+  }
 }
+
 outcomeFitDf$Outcome_type <- factor(outcomeFitDf$Outcome_type,
                                        levels=outcome, labels=outcome2)
 
-
-# https://www.sciencemag.org/news/2021/06/israel-reports-link-between-rare-cases-heart-inflammation-and-covid-19-vaccination
-myocarditisProp <- c(1/6000, 1/3000)
-ageRangeMyo <- c(16, 24)
-ageMeanMyo <- mean(ageRangeMyo)
-myoTextX <- 68
-myoTextY <- 0.005
-
 serologyPlot <- longCountryData %>%
+  dplyr::filter(., Outcome_type!="Fatal disease") %>%
+  droplevels(.) %>%
   ggplot(., aes(x=meanAge, y=Outcomes*100/(Population*Prevalence/100),
                 color=Type, group=as.character(Location), facet=Outcome_type)) +
   geom_point(size=locPointSize, alpha=dataAlpha) +
   geom_line(alpha=locLineAlpha, size=locLineSize, alpha=dataAlpha) +
-  facet_rep_grid(.~Outcome_type, repeat.tick.labels="left") +
-  geom_line(data=outcomeFitDf, aes(x=meanAge, y=outcomeProp*100),
+  facet_rep_grid(Outcome_type~processing, repeat.tick.labels="left") +
+  geom_line(data=droplevels(dplyr::filter(outcomeFitDf, Outcome_type!="Fatal disease")),
+            aes(x=meanAge, y=outcomeProp*100),
             color="black", linetype="solid", size=regLineSize,
             inherit.aes=FALSE) +
-  geom_ribbon(data=outcomeFitDf,
+  geom_ribbon(data=droplevels(dplyr::filter(outcomeFitDf, Outcome_type!="Fatal disease")),
               aes(x=meanAge, ymin=outcome_L*100, ymax=outcome_H*100),
               alpha=ribbonAlpha, colour=NA, show.legend=FALSE,
               inherit.aes=FALSE) +
-  geom_segment(aes(x=ageMeanMyo, xend=ageMeanMyo, y=myocarditisProp[1]*100,
-                   yend=myocarditisProp[2]*100), color="black", size=1,
-               inherit.aes=FALSE) +
-  geom_segment(aes(x=ageMeanMyo+2, xend=myoTextX-20, y=100/4000, yend=myoTextY*1.5),
-               arrow=arrow(length=unit(0.2, "cm")), color="black",
-               inherit.aes=FALSE, size=0.3) +
-  geom_text(aes(x=myoTextX, y=myoTextY), label="Israel vaccine\nmyocarditis rate", color="black",
-            inherit.aes=FALSE, size=3.1) +
   scale_color_brewer(palette="Dark2") +
   theme_bw() +
   scale_y_continuous(trans='log10', labels=scaleFun,
@@ -146,7 +130,7 @@ serologyPlot <- longCountryData %>%
   xlab("Age") +
   ylab("% Infected with outcome")
 
-ggsave(serologyPlotName, serologyPlot, width=18, height=9.5, units="cm")
+ggsave("../data/plots/figureS1.png", serologyPlot, width=16, height=16, units="cm")
 
 
 ########################
