@@ -10,81 +10,49 @@ source("./functions_auxiliary.R")
 source("./stan_utility.R")
 set.seed(2961)
 
-savingName <- "../data/processed_data/3_serology_fits.RDS"
-countryData <- read.csv("../data/collected_data/locations_serology_data.csv",
-                        stringsAsFactors=FALSE) %>%
-  as_tibble(.) %>%
-  dplyr::mutate(., Prevalence=Prevalence/100, PrevalenceL=PrevalenceL/100,
-                PrevalenceH=PrevalenceH/100)
+##############
+# Uncomment data to be used
+##############
 
+#savingName <- "../data/processed_data/3_serology_fits.RDS"
+#countryData <- read.csv("../data/collected_data/locations_serology_data.csv",
+#                        stringsAsFactors=FALSE) %>%
+#  as_tibble(.) %>%
+#  dplyr::mutate(., Prevalence=Prevalence/100, PrevalenceL=PrevalenceL/100,
+#                PrevalenceH=PrevalenceH/100)
+#
 
-#savingName <- "../data/processed_data/3_serology_fits_corrected_Phi.RDS"
+##savingName <- "../data/processed_data/3_serology_fits_corrected_Phi.RDS"
 #countryData <- read.csv("../data/collected_data/locations_serology_data_corrected.csv",
 #                        stringsAsFactors=FALSE) %>%
 #  as_tibble(.) %>%
 #  dplyr::mutate(., Prevalence=Prevalence/100, PrevalenceL=PrevalenceL/100,
 #                PrevalenceH=PrevalenceH/100)
+#englandRepDeathsInd <- which(with(countryData, Location=="England" &
+#                         !(is.na(Hospitalized) & is.na(ICU))))
+#countryData$Deaths[englandRepDeathsInd] <- NA
 
-#savingName <- "../data/processed_data/3_serology_fits_u50.RDS"
+#savingName <- "../data/processed_data/3_serology_fits_u40.RDS"
 #countryData <- read.csv("../data/collected_data/locations_serology_data.csv",
 #                        stringsAsFactors=FALSE) %>%
 #  as_tibble(.) %>%
 #  dplyr::mutate(., Prevalence=Prevalence/100, PrevalenceL=PrevalenceL/100,
 #                PrevalenceH=PrevalenceH/100) %>%
-#  dplyr::filter(., meanAge<=50)
+#  dplyr::filter(., meanAge<=40)
+
+savingName <- "../data/processed_data/3_serology_fits_corrected_noTest_corrected.RDS"
+countryData <- read.csv("../data/collected_data/locations_serology_data_corrected.csv",
+                        stringsAsFactors=FALSE) %>%
+  as_tibble(.) %>%
+  dplyr::mutate(., Prevalence=Prevalence/100, PrevalenceL=PrevalenceL/100,
+                PrevalenceH=PrevalenceH/100) %>%
+  dplyr::filter(., Type != "Testing") 
+  #dplyr::filter(., Type != "Seroprevalence_convenience") 
 
 
 ##############
 # Fit gamma distribution to seroprevalences
 ##############
-# number of cases the values of a gamma distribution over the cases
-gammaPars <- function(casesQuantiles, quants=c(0.025, 0.5, 0.975)) { #
-  pars <- get.gamma.par(p=quants, q=casesQuantiles,
-                        plot=FALSE, verbose=FALSE, show.output=FALSE)
-}
-
-gammaShape <- NULL
-gammaRate <- NULL
-for (r in c(1:nrow(countryData))) {
-  row <- countryData[r,]
-  pars <- NA
-  if (row$PrevalenceL!=row$Prevalence) {
-    pars <- with(row, gammaPars(c(PrevalenceL, Prevalence, PrevalenceH)))
-    #pars <- with(row, betaPars(c(PrevalenceL, Prevalence, PrevalenceH)/100))
-  }
-  if (is.na(pars)) {
-    pars <- with(row, gammaPars(c(PrevalenceL, PrevalenceH)*1000, quants=c(0.025, 0.975)))
-    pars[2] <- pars[2]*1000
-    #pars <- with(row, betaPars(c(PrevalenceL, PrevalenceH)/100, quants=c(0.025, 0.975)))
-  }
-  if (is.na(pars)) {
-    pars <- with(row, gammaPars(c(PrevalenceL, Prevalence, PrevalenceH)/10))
-    pars[2] <- pars[2]/10
-    #pars <- with(row, betaPars(c(PrevalenceL, PrevalenceH)/100, quants=c(0.025, 0.975)))
-  }
-  gammaShape[r] <- pars[1]
-  gammaRate[r] <- pars[2]
-}
-
-countryData$gammaShape <- gammaShape
-countryData$gammaRate <- gammaRate
-
-# Just check that the gammas and the quantiles match
-#meanPrev <- NULL
-#lPrev <- NULL
-#hPrev <- NULL
-#for (r in c(1:length(gammaShape))) {
-#  meanPrev[r] <- qgamma(p=c(0.5), rate=gammaRate[r], shape=gammaShape[r])
-#  lPrev[r] <- qgamma(p=c(0.025), rate=gammaRate[r], shape=gammaShape[r])
-#  hPrev[r] <- qgamma(p=c(0.975), rate=gammaRate[r], shape=gammaShape[r])
-#}
-#plot(countryData$Prevalence, meanPrev)
-#abline(0,1)
-#plot(countryData$PrevalenceL, lPrev)
-#abline(0,1)
-#plot(countryData$PrevalenceH, hPrev)
-#abline(0,1)
-
 
 outcome_reg <- rstan::stan_model("./3_estimate_serology_outcome_rates.stan")
 outcome <- c("Hospitalized", "ICU", "Deaths")

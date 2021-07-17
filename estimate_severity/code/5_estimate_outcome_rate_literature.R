@@ -65,37 +65,6 @@ lethalityPosterior <- list()
 # Fit gamma distribution IFR estimates
 ##############
 library(rriskDistributions)
-# number of cases the values of a gamma distribution over the cases
-gammaPars <- function(casesQuantiles, quants=c(0.025, 0.5, 0.975)) { #
-  #pars <- get.gamma.par(p=quants, q=casesQuantiles,
-  #                      plot=FALSE, verbose=FALSE, show.output=FALSE)
-  pars <- get.lnorm.par(p=quants, q=casesQuantiles,
-                        plot=FALSE, verbose=FALSE, show.output=FALSE)
-}
-
-meanlog <- NULL
-sdlog <- NULL
-for (r in c(1:nrow(literatureIFR))) {
-  row <- literatureIFR[r,]
-  pars <- NA
-  if (row$Proportion_L!=row$Proportion & row$Proportion_L!=0) {
-    pars <- with(row, gammaPars(c(Proportion_L, Proportion, Proportion_H)))
-  }
-  if (is.na(pars) & row$Proportion_L==0) {
-    pars <- with(row, gammaPars(c(Proportion_L+10^(-6), Proportion, Proportion_H),
-                                quants=c(0.025, 0.5, 0.975)))
-  }
-  if (is.na(pars) & row$Proportion_L!=0) {
-    pars <- with(row, gammaPars(c(Proportion_L, Proportion, Proportion_H*1.01),
-                                quants=c(0.025, 0.5, 0.975)))
-  }
-  if (is.na(pars) & (row$Proportion==row$Proportion_H) & row$Proportion_L==0) {
-    pars <- with(row, gammaPars(c(Proportion_L+10^(-6), Proportion, Proportion_H*1.05),
-                                quants=c(0.025, 0.5, 0.975)))
-  }
-  meanlog[r] <- pars[1]
-  sdlog[r] <- pars[2]
-}
 
 # Just check that the gammas and the quantiles match
 #meanPrev <- NULL
@@ -124,6 +93,21 @@ for (r in c(1:nrow(literatureIFR))) {
 #abline(0,1)
 #lele <- which(literatureIFR$Proportion_L/lPrev>1.5)
 
+proportion <- literatureIFR$Proportion
+proportionL <- literatureIFR$Proportion_L
+proportionL[3] <- proportionL[3]
+proportionH <- literatureIFR$Proportion_H
+proportionH[3] <- proportionH[3]
+
+parametersGamma <- fit_gamma_ci(proportion, proportionL, proportionH)
+
+#paramslnorm <- fit_lnorm_ci(proportion, proportionL, proportionH)
+#paramsBeta <- fit_beta_ci(proportion, proportionL, proportionH)
+
+parametersGamma$gammaShape[c(2:3)] <- NA
+parametersGamma$gammaShape[c(2:3)] <- NA
+parametersGamma$gammaShape[which(literatureIFR$Study=="Brazeau")] <- NA
+parametersGamma$gammaRate[which(literatureIFR$Study=="Brazeau")] <- NA
 
 ifrSamples <- 500
 outcomes <- c("Hospitalized", "ICU")
@@ -149,8 +133,14 @@ for (no in c(1:length(outcomes))) {
   for (s in c(1:ifrSamples)) {
     print(paste("IFR sample:", s))
     sampleIFR <- NULL
-    for (r in c(1:length(meanlog))) {
-      sampleIFR[r] <- rlnorm(1, meanlog=meanlog[r], sdlog=sdlog[r])
+    for (r in c(1:length(parametersGamma$gammaShape))) {
+      if (!is.na(parametersGamma$gammaShape[r])) {
+        #sampleIFR[r] <- rlnorm(1, meanlog=meanlog[r], sdlog=sdlog[r])
+        sampleIFR[r] <- rgamma(1, shape=parametersGamma$gammaShape[r],
+                               rate=parametersGamma$gammaRate[r])
+      } else {
+        sampleIFR[r] <- literatureIFR$Proportion[r]
+      }
     }
     ifrVec <- rep(sampleIFR, max(lethalityPosterior[[oStr]]$sample))
     tempOutcomeProp <- ifrVec/lethalityPosterior[[oStr]]$samples$proportion
@@ -161,7 +151,7 @@ for (no in c(1:length(outcomes))) {
     ind1 <- round(dim(outcomePropMat)[2]*0.025)
     ind2 <- round(dim(outcomePropMat)[2]*0.975)
     # collect the extreme values to compute CI. due to memory insufficiency
-    for (r in c(1:length(meanlog))) {
+    for (r in c(1:length(parametersGamma$gammaShape))) {
       first025 <- sort(outcomePropMat[r,])[1:ind1]
       last025 <- sort(outcomePropMat[r,])[ind2:ncol(outcomePropMat)]
       if (s==1) {

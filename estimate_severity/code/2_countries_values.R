@@ -9,8 +9,8 @@
 #  and deaths for different locations. The sources are
 #  indicated in the script and in the manuscript
 #  
-#  Daniel Herrera-Esposito gathered and analyzed 
-#  the data from the cited sources, and wrote the code.
+#  Daniel Herrera-Esposito gathered the data from the
+#  cited sources, and wrote the code.
 #  
 #  Direct any questions to dherrera@fcien.edu.uy
 #  
@@ -39,22 +39,28 @@ data(popF)
 # Test and outcome data obtained by mail from the authors of
 # "Clinical spectrum of coronavirus disease 2019 in Iceland: population based cohort study"
 # BMJ. E Eythorsson et al.
-# Seroprevalence data was obtained from
-# "Spread of SARS-CoV-2 in the Icelandic Population", NEJM, Gudbjartsson et al
-
 icelandTestAges <- c("0-9", "10-19", "20-29", "30-39", "40-49", "50-59",
                          "60-69", "70-79", "80+")
-Tested_Iceland <- c(53, 145, 330, 274, 343, 325, 225, 80, 27)
-Hospitalized_Iceland <- c(1, 0, 4, 7, 9, 19, 30, 24, 17)
-ICU_Iceland <- c(0, 0, 0, 1, 2, 6, 12, 6, 1)
-deaths_Iceland <- c(0, 0, 0, 0, 0, 0, 2, 3, 4)
+Tested_Iceland <- c(38, 113, 251, 222, 300, 279, 195, 64, 18)
+Hospitalized_Iceland <- c(1, 0, 4, 7, 8, 17, 25, 19, 13)
+ICU_Iceland <- c(0, 0, 0, 1, 2, 6, 10, 5, 0)
+deaths_Iceland <- c(0, 0, 0, 0, 0, 0, 2, 3, 3)
 
-oohDeaths_Iceland <- c(0, 0, 0, 0, 0, 0, 0, 0, 2)
-ooiDeaths_Iceland <- c(0, 0, 0, 0, 0, 0, 0, 1, 4)
+# data obtained: 
+oohDeaths_Iceland_o65 <- 1 
+ooiDeaths_Iceland_o65 <- 4
+# all ooh and ooi deaths occured in +65
+# evidently, 3 ooi deaths occurred in 80+. There's a remaining ooi death
+# that we add to the 70-79 range
+# There's one out of hospital death, which we add to the oldest age
+oohDeaths_Iceland <- c(0, 0, 0, 0, 0, 0, 0, 0, 1)
+ooiDeaths_Iceland <- c(0, 0, 0, 0, 0, 0, 0, 1, 3)
 
 severeCases_Iceland <- Hospitalized_Iceland + oohDeaths_Iceland
 criticalCases_Iceland <- ICU_Iceland + ooiDeaths_Iceland
 
+# Seroprevalence data was obtained from
+# "Spread of SARS-CoV-2 in the Icelandic Population", NEJM, Gudbjartsson et al
 icelandSeroprevAges <- c("0-9", "10-19", "20-29", "30-39", "40-49", "50-59",
                          "60-69", "70-79", "80+")
 icelandSeroprev <- c(0, 0.32, 0.90, 1.01, 1.44, 0.82, 0.49, 0.28, 0)
@@ -65,6 +71,8 @@ population_Iceland <- extract_country_population(popM=popM, popF=popF,
                                                  countryName="Iceland",
                                                  ageBins=icelandSeroprevAges)
 
+# Estimate the number of cases from seroprevalence, and
+# from that, the ratio between testing and seroprevalence cases
 seroprevCasesIceland <- round(population_Iceland*icelandSeroprev/100)
 seroprevCasesIceland_L <- round(population_Iceland*icelandSeroprevL/100)
 seroprevCasesIceland_H <- round(population_Iceland*icelandSeroprevH/100)
@@ -107,10 +115,10 @@ Iceland <- data.frame(Age=icelandSeroprevAges,
 ################
 # New Zealand
 ################
-# case demographics New Zealand from, accessed January 3
+# Test and outcome demographics obtained through a combination of
+# the official website, accessed January 3 2021
 # https://www.health.govt.nz/our-work/diseases-and-conditions/covid-19-novel-coronavirus/covid-19-data-and-statistics/covid-19-case-demographics
-
-# Data obtained by mail
+# And by mail to the queries from the site 
 # https://www.health.govt.nz/our-work/diseases-and-conditions/covid-19-novel-coronavirus/covid-19-data-and-statistics/covid-19-case-demographics#age-gender
 age_NZ <- c("0-9", "10-19", "20-29", "30-39", "40-49", "50-59",
                 "60-69", "70-79", "80-89", "90+")
@@ -145,16 +153,15 @@ NewZealand <- data.frame(Age=age_NZ,
 ######################
 # South korea
 ######################
-# analysis on disease severity extracted from:
+# analysis on severe and critical disease extracted from:
 # https://www.thelancet.com/journals/lanwpc/article/PIIS2666-6065(20)30061-4/fulltext
 # Has clearly nested statistics, can be useful
-# Deaths from Severe COVID-19 Illness: Risk Factors and Its Burden on Critical Care Resources
-age_Korea <- c("0-10", "10-19", "20-29", "30-39", "40-49", "50-59",
+age_Korea <- c("0-9", "10-19", "20-29", "30-39", "40-49", "50-59",
             "60-69", "70-79", "80+")
 Tested_Korea <- c(89, 397, 2174, 780, 1037, 1490, 1007, 517, 312)
 ICU_Korea <- c(0, 0, 2, 4, 2, 26, 50, 82, 117)
 Hospitalized_Korea <- c(0, 1, 19, 14, 32, 128, 174, 199, 189)
-#deaths_Korea <- c(0, 0, 0, 2, 3, 15, 35, 76, 120)
+# Deaths from Severe COVID-19 Illness: Risk Factors and Its Burden on Critical Care Resources
 deaths_Korea2 <- c(0, 0, 0, 2, 1, 14, 36, 67, 107)
 
 population_Korea <- extract_country_population(popM=popM, popF=popF,
@@ -182,9 +189,8 @@ Korea <- data.frame(Age=age_Korea,
 ################
 # Spain
 ################
-# Spain cases https://cnecovid.isciii.es/covid19/#documentaci%C3%B3n-y-datos
-# Spain seroprevalence Pastor-Barriuso et al https://www.medrxiv.org/content/medrxiv/early/2020/09/25/2020.08.06.20169722.full.pdf
-# I take adjusted seroprevalence from Levin et al
+# Spain file with case data from
+# https://cnecovid.isciii.es/covid19/#documentaci%C3%B3n-y-datos
 
 age_Spain <- c("0-9", "10-19", "20-29", "30-39", "40-49", "50-59", "60-69", "70+")
 spainDailyOutcome <- read.csv("../downloaded_data/spain/casos_hosp_uci_def_sexo_edad_provres.csv",
@@ -220,10 +226,11 @@ Hospitalized_Spain <- spainHosp$Hospitalized
 ICU_Spain <- spainICU$ICU
 deaths_Spain <- spainDeaths$Deaths
 
+# Spain seroprevalence Pastor-Barriuso et al
 # Spain seroprevalence from:
 # Prevalence of SARS-CoV-2 in Spain (ENE-COVID): a nationwide,
 # population-based seroepidemiological study
-# date seroprev = April 27 - May 11
+# I take adjusted seroprevalence from Levin et al
 seroprev_Spain <- c(2.4, 2.9, 3.4, 3.0, 3.6, 3.7, 3.4, 3.1)
 seroprevL_Spain <- c(1.5, 2.3, 2.7, 2.4, 3.0, 3.1, 2.8, 2.5)
 seroprevH_Spain <- c(3.4, 3.5, 4.1, 3.6, 4.5, 4.7, 4.5, 5.0)
@@ -251,14 +258,15 @@ Spain <- data.frame(Age=age_Spain,
 ######################
 # Outcome data from: July 16th
 # https://www.hpsc.ie/a-z/respiratory/coronavirus/novelcoronavirus/casesinireland/epidemiologyofcovid-19inireland/july2020/
-# Seroprevalence data from:
-# https://www.hpsc.ie/a-z/respiratory/coronavirus/novelcoronavirus/scopi/SCOPI%20report%20preliminary%20results%20final%20version.pdf
-
 age_Ireland_outcome <- c("15-24", "25-34", "35-44", "45-54", "55-64")
 deaths_Ireland <- c(1, 5, 12, 23, 65)
 ICU_Ireland <- c(5, 15, 36, 91, 127)
 Hospitalized_Ireland <- c(75, 198, 274, 448, 497)
 
+# Seroprevalence data from:
+# https://www.hpsc.ie/a-z/respiratory/coronavirus/novelcoronavirus/scopi/SCOPI%20report%20preliminary%20results%20final%20version.pdf
+# Note that seroprevalence values are shifted 5 years in the final
+# dataframe, to match outcome data
 age_Ireland_sero <- c("20-29", "30-39", "40-49", "50-59", "60-69")
 seroprev_Ireland <- c(2.3, 1.4, 1.8, 1.5, 1.7)
 seroprevL_Ireland <- c(0.8, 0.4, 0.7, 0.5, 0.6)
@@ -268,6 +276,7 @@ population_Ireland <- extract_country_population(popM=popM, popF=popF,
                                                  countryName="Ireland",
                                                  ageBins=c("0-14", age_Ireland_outcome, "65+"))
 population_Ireland <- population_Ireland[-c(1, length(population_Ireland))]
+
 
 Ireland <- data.frame(Age=age_Ireland_outcome,
                       Population=population_Ireland,
@@ -286,34 +295,34 @@ Ireland <- data.frame(Age=age_Ireland_outcome,
 ######################
 # Sweden
 ######################
-# https://portal.icuregswe.org/siri/report/corona.alderkon
+
+# ICU data from:
 # https://www.icuregswe.org/en/data--results/covid-19-in-swedish-intensive-care/
 # On the information panel, look for the "Period" menu on the left
-# Seroprevalence from Levin et al, citation:
-# 154. Sweden Public Health Authority. COVID-19 Report for Week 24 - COVID-19 veckorapport vecka 24. 2020.
-# Dates of seroprev April 27-May24
-# Deaths taken from Levin for June 18, ICU taken until May 24
-# Deaths taken from O'Driscoll for September
+# https://portal.icuregswe.org/siri/report/corona.alderkon
 age_Sweden_ICU <- c("0-9", "10-19", "20-29", "30-39", "40-49", "50-59",
                 "60-69", "70-79", "80-89", "90+")
 ICU_Sweden <- c(5, 7, 73, 91, 231, 527, 599, 386, 78, 1)
 
+# Deaths taken from Levin for June 18, ICU taken until May 24
 age_Sweden_deaths <- c("0-9", "10-19", "20-29", "30-39", "40-49", "50-59",
                 "60-69", "70-79", "80-89", "90+")
 deathsSweden_september <- c(1, 0, 10, 18, 45, 164, 406, 1269, 2436, 1527)
 
 age_Sweden_outcome_Levin <- c("0-19", "20-49", "50-69", "70+")
 deaths_Sweden_Levin <- c(1, 63, 504, 4485)
-#ICU_Sweden <- c(sum(ICU_Sweden[1:2]), sum(ICU_Sweden[3:5]),
-#                   sum(ICU_Sweden[6:7]), sum(ICU_Sweden[8:10]))
 deathsSweden <- round(deathsSweden_september*sum(deaths_Sweden_Levin)/sum(deathsSweden_september))
 
+# Seroprevalence from Levin et al, citation:
+# 154. Sweden Public Health Authority. COVID-19 Report for Week 24 - COVID-19 veckorapport vecka 24. 2020.
+# Dates of seroprev April 27-May24
 age_Sweden_seroprev <- c("0-19", "20-49", "50-69", "70+")
 seroprev_Sweden <- c(5.7, 6.5, 4.8, 3.1)
 seroprevL_Sweden <- c(4.5, 5.2, 3.6, 2.1)
 seroprevH_Sweden <- c(7.0, 7.8, 6.0, 4.1)
 
-# adjust to ICU ages
+# adjust to ICU ages, using the large bin seroprevalence for sub-bins
+# (e.g. use seroprevalence of 20-49 for 20-29, 30-39, 40-49
 seroprev_Sweden_ICU <- c(rep(seroprev_Sweden[1], 2),
                      rep(seroprev_Sweden[2], 3),
                      rep(seroprev_Sweden[3], 2),
@@ -346,15 +355,88 @@ Sweden <- data.frame(Age=age_Sweden_ICU,
                      EndPointCases="2020-05-24")
 
 ######################
+# Belgium
+######################
+# Hospital data
+# https://covid-19.sciensano.be/fr/covid-19-situation-epidemiologique
+age_Belgium_outcome <- c("0-9", "10-19", "20-29", "30-39", "40-49", "50-59",
+                "60-69", "70-79", "80-89", "90+")
+Hospitalized_proportion_Belgium <- c(1.2, 0.5, 1.8, 4.1, 8.3, 15.4,
+                                     17.7, 21.0, 23.4, 6.7)/100
+totalHospBelgium <- 16061
+Hospitalized_Belgium <- round(Hospitalized_proportion_Belgium*totalHospBelgium)
+
+# Death data:
+# Belgian Covid-19 Mortality, Excess Deaths, Number of
+# Deaths per Million, and Infection Fatality Rates 
+totalDeaths <- 8521
+hospitalDeaths <- 4041
+age_Belgium_deaths <- c("0-24", "25-44", "45-64", "65-74", "75-84", "85+")
+deaths_Belgium <- c(1, 30, 409, 1061, 2144, 5087)
+
+# reshape hospitalizations to fit deaths. Just divide them equally
+# within each bin, since bins are small and so should be ~ homogeneous
+hB <- Hospitalized_Belgium
+Hospitalized_Belgium2 <- round(c(sum(hB[1:2])+hB[3]/2,
+                           hB[3]/2+hB[4]+hB[5]/2,
+                           hB[5]/2+hB[6]+hB[7]/2,
+                           hB[7]/2+hB[8]/2,
+                           hB[8]/2+hB[9]/2,
+                           hB[9]/2+hB[10]))
+
+# ratio between ICU and hospitalizations for Belgium is
+# availale up to 14 June, together with ICU age distribution
+# Extrapolate to used date
+propHospToICU <- 1696/17628
+totICU <- round(propHospToICU*totalHospBelgium)
+ICU_proportion_Belgium <- c(0.1, 0.5, 1.1, 3.3, 8.3, 20.9, 25.6, 26.9, 12.9, 0.4)/100
+ICU_Belgium <- round(totICU*ICU_proportion_Belgium)
+iB <- ICU_Belgium
+ICU_Belgium2 <- round(c(sum(iB[1:2])+iB[3]/2,
+                           iB[3]/2+iB[4]+iB[5]/2,
+                           iB[5]/2+iB[6]+iB[7]/2,
+                           iB[7]/2+iB[8]/2,
+                           iB[8]/2+iB[9]/2,
+                           iB[9]/2+iB[10]))
+
+# data on nursing home deaths is also available, use those to
+# correct for ooh deaths. From 
+# Belgian Covid-19 Mortality, Excess Deaths, Number of
+# Deaths per Million, and Infection Fatality Rates. Molenberghs et al
+nursingHomeDeaths_Belgium <- c(0, 0, 58, 508, 952, 4251)
+nh_in_hospital <- 1276
+nh_out_hospital <- 4494
+oohDeaths_Belgium <- round(nursingHomeDeaths_Belgium*nh_out_hospital/
+                           (nh_in_hospital+nh_out_hospital))
+severeCases_Belgium <- Hospitalized_Belgium2 + oohDeaths_Belgium
+
+# Seroprevalence data:
+# Seroprevalence of IgG antibodies against SARS coronavirus 2 in
+# Belgium – a serial prospective cross-sectional nationwide study of residual samples
+seroprev_Belgium <- c(6.7, 6.6, 6.9, 4.6, 7.8, 14.7)
+seroprevL_Belgium <- c(4.7, 4.7, 5.2, 2.6, 4.7, 9.9)
+seroprevH_Belgium <- c(9.6, 9.2, 9.2, 8.0, 13.0, 21.8)
+
+population_Belgium <- c(3228894, 2956684, 3080528, 1147009, 690685, 326659)
+
+Belgium <- data.frame(Age=age_Belgium_deaths,
+                  Population=population_Belgium,
+                  Prevalence=seroprev_Belgium,
+                  PrevalenceL=seroprevL_Belgium,
+                  PrevalenceH=seroprevH_Belgium,
+                  Hospitalized=severeCases_Belgium,
+                  ICU=ICU_Belgium2,
+                  Deaths=deaths_Belgium,
+                  Type="Seroprevalence_convenience",
+                  Location="Belgium",
+                  EndPointOutcome="2020-05-08",
+                  EndPointCases="2020-04-26")
+
+
+######################
 # France
 ######################
-# Seroprevalence from Carrat et al. Seroprevalence of SARS-CoV-2 among
-# adults in three regions of France following the lockdown and
-# associated risk factors: a multicohort study Figure 2
-# Seroprevalence endpoint = June 23, beginPoint=May 4
 # Hospital data from https://www.santepubliquefrance.fr/regions/ile-de-france/documents/bulletin-regional/2020/covid-19-point-epidemiologique-en-ile-de-france-du-28-mai-2020
-# Demography https://www.citypopulation.de/en/france/reg/admin/R11__%C3%AEle_de_france/
-
 age_France_outcome <- c("0-9", "10-19", "20-29", "30-39", "40-49", "50-59",
                 "60-69", "70-79", "80-89", "90+")
 
@@ -367,7 +449,26 @@ ilDeFrance_hospTot <- ilDeFrance_inHosp + ilDeFrance_hospDead + ilDeFrance_hospR
 Hospitalized_France <- c(ilDeFrance_hospTot[3:8], sum(ilDeFrance_hospTot[9:10]))
 age_France_outcome <- c(age_France_outcome[3:8], "80+")
 
-# proportions
+# Epidemiologique report specifies age-stratified hospital deaths
+# and total deaths in care homes. Since there is no
+# age-stratified data on total deaths, the simple correction we are
+# applying to other countries (in another script) can't be used here. We need
+# to allocate care-home deaths to get total deaths
+# We will allocate the care home deaths in France with the same
+# age distribution as in Belgium
+careHomeDeathsTot_France <- 4405 # deaths in care home
+oohDeaths_France <- round(careHomeDeathsTot_France*oohDeaths_Belgium/sum(oohDeaths_Belgium))
+oohDeaths_France <- c(0, oohDeaths_France)
+
+# get total deaths and total severe
+ilDeFrance_hospDead_2 <- c(ilDeFrance_hospDead[3:8], sum(ilDeFrance_hospDead[9:10]))
+ilDeFrance_totalDeath <- ilDeFrance_hospDead_2 + oohDeaths_France
+severeCases_ilDeFrance <- Hospitalized_France + oohDeaths_France
+
+# Seroprevalence from Carrat et al. Seroprevalence of SARS-CoV-2 among
+# adults in three regions of France following the lockdown and
+# associated risk factors: a multicohort study Figure 2
+# Seroprevalence endpoint = June 23, beginPoint=May 4
 age_France_Seroprev <- c("20-24", "25-29", "30-34", "35-39", "40-44", "45-49",
                           "50-54", "55-59", "60-64", "65-69", "70-74", "75-79",
                           "80-84", "85+")
@@ -383,6 +484,7 @@ seroprev_France <- colMeans(matrix(seroprev_France, nrow=2, ncol=7))
 seroprevL_France <- colMeans(matrix(seroprevL_France, nrow=2, ncol=7))
 seroprevH_France <- colMeans(matrix(seroprevH_France, nrow=2, ncol=7))
 
+# Demography https://www.citypopulation.de/en/france/reg/admin/R11__%C3%AEle_de_france/
 age_France_pop <- c("0-9", "10-19", "20-29", "30-39", "40-49", "50-59",
                 "60-69", "70-79", "80-89", "90+")
 ilDeFrancePop <- c(1589856, 1568051, 1667319, 1762912, 1667546, 1537661,
@@ -394,9 +496,9 @@ Ile_de_France <- data.frame(Age=age_France_outcome,
                          Prevalence=seroprev_France,
                          PrevalenceL=seroprevL_France,
                          PrevalenceH=seroprevH_France,
-                         Hospitalized=Hospitalized_France,
+                         Hospitalized=severeCases_ilDeFrance,
                          ICU=NA,
-                         Deaths=NA,
+                         Deaths=ilDeFrance_totalDeath,
                          Type="Seroprevalence",
                          Location="Ile_de_France",
                          EndPointOutcome="2020-05-26",
@@ -406,29 +508,9 @@ Ile_de_France <- data.frame(Age=age_France_outcome,
 ######################
 # England
 ######################
-# Serology and outcome ages are not matched
 
-# ICU and in ICU deaths from:
-# "ICNARC report on COVID-19 in critical care 03 July 2020"
-# You need to look on google "ICNARC report on COVID-19 in critical care 03 July 2020"
-# Hospital data from:
-# https://coronavirus.data.gov.uk/details/download
-# Hospital 2 https://www.england.nhs.uk/statistics/statistical-work-areas/covid-19-hospital-activity/
-# In hospital death data from:
-# https://www.england.nhs.uk/statistics/statistical-work-areas/covid-19-daily-deaths/
-# Total death data from:
-# https://www.ons.gov.uk/peoplepopulationandcommunity/birthsdeathsandmarriages/deaths/bulletins/deathsregisteredweeklyinenglandandwalesprovisional/weekending18june2021
-# Figure 4
 
-# Seroprevalence from:
-# 1) Antibody prevalence for SARS-CoV-2 following the peak of the pandemic in England: REACT2 study in 100,000 adults
-# 2) Seroprevalence of SARS-CoV-2 antibodies in children: a prospective multicentre cohort study
-
-##########
-# England ICU
-##########
-
-# population data
+# population data from Levin et al
 age_England_Pop_Levin <- c("0-17", "18-24", "25-34", "35-44", "45-54", "55-64",
                        "65-74", "75+")
 population_England_Levin <- c(12023568, 4746616, 7609363, 7147939, 7623273, 6782486,
@@ -441,20 +523,77 @@ population_England <- c(3496750, 3135711, 3258677, 2079229, 5267401,
                         3601694, 3183915, 3377162, 2674161, 2178672,
                         1777547, 1338005, 1254688)
 
-
+# Seroprevalence from:
+# 1) Antibody prevalence for SARS-CoV-2 following the peak of the pandemic in England: REACT2 study in 100,000 adults
+# 2) Seroprevalence of SARS-CoV-2 antibodies in children: a prospective multicentre cohort study
 age_England_seroprev <- c("0-17", "18-24", "25-34", "35-44", "45-54", "55-64",
                        "65-74", "75+")
 seroprev_England <- c(9.2, 7.9, 7.8, 6.1, 6.4, 5.9, 3.2, 3.3)
 seroprevL_England <- c(6.2, 7.3, 7.4, 5.7, 6.0, 5.5, 2.8, 2.9)
 seroprevH_England <- c(12.2, 8.5, 8.3, 6.6, 6.9, 6.4, 3.6, 3.8)
 
-### ICU
-age_England_ICU <- c("16-29", "30-39", "40-49", "50-59", "60-69",
-                     "70-79", "80+")
-#totICUEng <- 13025
+##########
+# England ICU
+##########
+# ICU and in ICU deaths from:
+# "ICNARC report on COVID-19 in critical care 03 July 2020"
+# You need to look on google "ICNARC report on COVID-19 in critical
+# care 03 July 2020"
+age_England_ICU <- c("16-29", "30-39", "40-49", "50-59", "60-69", "70-79", "80+")
 totICUEng <- 10287
 propICUEng <- c(2.2, 5.8, 13.7, 27.7, 29.7, 18.0, 2.9)
 ICU_England <- round(propICUEng/100*totICUEng)
+
+# ICU deaths
+icnarcDeathAge <- c("16-39", "40-49", "50-59", "60-69", "70-79", "80+")
+icuDeathsEngland <- c(119, 290, 918, 1372, 1069, 176)
+# redistribute ICU deaths to match ICU patients bins
+icuDeathsEngland_y <- round(icuDeathsEngland[1]*ICU_England[1:2]/sum(ICU_England[1:2]))
+icuDeathsEngland <- c(icuDeathsEngland_y, icuDeathsEngland[2:6])
+
+# Total death data from:
+# https://www.ons.gov.uk/peoplepopulationandcommunity/birthsdeathsandmarriages/deaths/bulletins/deathsregisteredweeklyinenglandandwalesprovisional/weekending18june2021
+# Figure 4
+ageDeathsEngland <- c("0-14", "15-44", "45-64", "65-74", "75-84", "85+")
+deathsTotEngland <- c(6, 536, 4800, 7392, 16226, 21179)
+# redistribute total deaths to match ICU bins
+reducedDeathVec <- deathsTotEngland[-c(1,6)]
+
+# Redistribute deaths according to relative risk of death for the ages
+# within each bin (taken from Levin). Using Levin within-bin
+# balances many relevant factors, since these are expected
+# to be relatively homogeneous within bins
+levinIFR <- function(age){return(10^(-3.27+0.0524*age))}
+
+splitVecs <- list("15-44"=list(seq(15, 29, 1), seq(30, 39, 1), seq(40, 44, 1)),
+                  "46-64"=list(seq(45, 49, 1), seq(50, 59, 1), seq(60, 64, 1)),
+                  "65-74"=list(seq(65, 69, 1), seq(70, 74, 1)),
+                  "75-84"=list(seq(75, 79, 1), seq(80, 84, 1)))
+
+splitDeaths <- list()
+# use Levin IFR to distribute deaths
+for (s in c(1:length(splitVecs))) {
+  sumMort <- NULL
+  for (ss in c(1:length(splitVecs[[s]]))) {
+    mort <- levinIFR(splitVecs[[s]][[ss]])
+    sumMort[ss] <- sum(mort)
+  }
+  splitDeaths[[s]] <- round(reducedDeathVec[s]*sumMort/sum(sumMort))
+}
+
+ageDeathsEngland_red <- c("15-29", "30-39", "40-49", "50-59", "60-69", "70-79", "80+")
+totalDeathsEngland_red <- c(splitDeaths[[1]][1],
+                            splitDeaths[[1]][2],
+                            splitDeaths[[1]][3]+splitDeaths[[2]][1],
+                            splitDeaths[[2]][2],
+                            splitDeaths[[2]][3]+splitDeaths[[3]][1],
+                            splitDeaths[[3]][2]+round(splitDeaths[[4]][1]),
+                            round(splitDeaths[[4]][2])+deathsTotEngland[6])
+
+ooiDeaths_England <- totalDeathsEngland_red - icuDeathsEngland
+criticalEngland <- ICU_England + ooiDeaths_England
+
+# redistribute population to match ICU bins
 population_ICU_England <- c(sum(population_England[4:6]),
                             sum(population_England[7:8]),
                             sum(population_England[9:10]),
@@ -469,25 +608,57 @@ England1 <- data.frame(Age=age_England_ICU,
                        PrevalenceL=seroprevL_England[-1],
                        PrevalenceH=seroprevH_England[-1],
                        Hospitalized=NA,
-                       ICU=ICU_England,
+                       ICU=criticalEngland,
                        Deaths=NA,
                        Type="Seroprevalence",
                        Location="England",
                        EndPointOutcome="2020-07-03",
                        EndPointCases="2020-07-13")
 
-
-# 5 of July deaths
-age_deaths_England1 <- c("20-39", "40-59", "60-79", "80+")
-deaths_England1 <- c(211, 2253, 11053, 15540)
-
-
 ##########
 # England Hosp
 ##########
+# Hospital data from:
+# https://coronavirus.data.gov.uk/details/download
+# Hospital 2 https://www.england.nhs.uk/statistics/statistical-work-areas/covid-19-hospital-activity/
+# In hospital death data from:
+# https://www.england.nhs.uk/statistics/statistical-work-areas/covid-19-daily-deaths/
+
 age_England_Hosp <- c("0-17", "18-64", "65-84", "85+")
 Hospitalized_England <- c(1224, 35024, 46212, 24476)
-#Hospitalized_England2 <- c(Hospitalized_England[1:2], sum(Hospitalized_England[3:4]))
+
+# Match total deaths to hospitalization bins
+ageVec <- seq(15, 44, 1)
+mort <- levinIFR(ageVec)
+
+# redistribute the deaths of the second bin according to
+# the within bin mortality. Will assign minimal deaths
+# to younger bin, and the procedure won't change that much
+sumMort <- c(sum(mort[1:3]), sum(mort[4:30]))
+splitDeathsBin2 <- round(deathsTotEngland[2]*sumMort/sum(sumMort))
+
+# hosp ages 0-17, 18-64, 65-84, 85+
+totalDeathsEngland_red2 <- c(deathsTotEngland[1]+splitDeathsBin2[1],
+                       splitDeathsBin2[2]+deathsTotEngland[3],
+                       sum(deathsTotEngland[4:5]),
+                       deathsTotEngland[6])
+
+# In hospital death data from:
+# https://www.england.nhs.uk/statistics/statistical-work-areas/covid-19-daily-deaths/
+ageHospitalDeaths <- c("0-19", "20-39", "40-59", "60-79", "80+")
+hospitalDeathsEngland <- c(20, 208, 2231, 10945, 15389)
+
+# redistribute hospital deaths to same age bins as hospitalizations
+# redistribute just uniformly by the number of years in each new bin
+hospitalDeathsEngland_red <- c(floor(hospitalDeathsEngland[1]/2),
+  ceiling(hospitalDeathsEngland[1]/2)+sum(hospitalDeathsEngland[2:3])+
+    round(hospitalDeathsEngland[4]/4),
+  round(hospitalDeathsEngland[4]*3/4)+round(hospitalDeathsEngland[5]/2),
+  round(hospitalDeathsEngland[5]/2))
+
+# get ooh deaths and severe cases
+oohDeaths_England <- totalDeathsEngland_red2 - hospitalDeathsEngland_red
+severeCases_England <- oohDeaths_England + Hospitalized_England
 
 # Estimate population for the hospitalization bins
 population_Hosp_England <- c(population_England_Levin[1],
@@ -495,7 +666,7 @@ population_Hosp_England <- c(population_England_Levin[1],
                              sum(population_England[14:17]),
                              population_England[18])
 
-# Estimate seroprevalence for the hospitalization bins
+# Estimate seroprevalence for the hospitalization bins,
 # by estimating cases in sub-bins and rearranging them
 age_England_seroprev2 <- c("0-17", "18-24", "25-34", "35-44", "45-54",
                            "55-64", "65-84", "85+")
@@ -519,7 +690,7 @@ England2 <- data.frame(Age=age_England_Hosp,
                        Prevalence=seroprev_England2,
                        PrevalenceL=seroprevL_England2,
                        PrevalenceH=seroprevH_England2,
-                       Hospitalized=Hospitalized_England,
+                       Hospitalized=severeCases_England,
                        ICU=NA,
                        Deaths=NA,
                        Type="Seroprevalence",
@@ -570,11 +741,6 @@ England <- rbind(England1, England2, England3)
 # More death data:
 # https://www.rivm.nl/documenten/epidemiologische-situatie-covid-19-in-nederland-11-mei-2020
 
-# Seroprevalence estimate first week april:
-# Nationwide seroprevalence of SARS-CoV-2 andidentification of risk factors in the general populationof the Netherlands during thefirst epidemic wave
-# Newer seroprevalence https://www.rivm.nl/en/pienter-corona-study/results
-# Seroprevalence 2 Associations between measures of social distancing and SARS-CoV-2 seropositivity: a nationwide population-based study in the Netherlands
-
 hospDataNL <- read.csv("../downloaded_data/netherlands/COVID-19_casus_landelijk.csv",
                        stringsAsFactors=FALSE, sep=";") %>%
   as_tibble(.) %>%
@@ -598,14 +764,12 @@ deaths_Netherlands <- hospDataNL$nDead
 Hospitalized_Netherlands <- hospDataNL$nHosp
 Severe_Netherlands <- hospDataNL$nSevere
 
-# Newer study
-#age_Netherlands_seroprev <- c("0-9", "10-19", "20-29", "30-39", "40-49", "50-59",
-#                "60-69", "70-79", "80-89", "90+")
-#seroprev_Netherlands <- c(0.5, 6.0, 7.8, 3.6, 3.6, 5.0, 4.0, 3.6, 6.0, 8.6)
-#seroprevL_Netherlands <- c(0.2, 5.0, 6.8, 2.8, 2.6, 4.0, 3.5, 2.8, 3.2, 3.2)
-#seroprevH_Netherlands <- c(1.0, 6.7, 9.9, 5.0, 5.3, 6.2, 4.8, 4.7, 11.5, 14.0)
+# Seroprevalence estimate first week april:
+# Nationwide seroprevalence of SARS-CoV-2 andidentification of risk factors in the general populationof the Netherlands during thefirst epidemic wave
+# Newer seroprevalence https://www.rivm.nl/en/pienter-corona-study/results
+# Seroprevalence 2 Associations between measures of social distancing and SARS-CoV-2 seropositivity: a nationwide population-based study in the Netherlands
+# But data is not extractable
 
-# Older study
 specificity <- 1
 sensitivity <- 0.844
 age_Netherlands_seroprev <- c("2-12", "13-17", "18-24", "25-39", "40-49",
@@ -643,33 +807,27 @@ Netherlands <- data.frame(Age=age_Netherlands_outcome,
 ######################
 # Georgia, USA
 ######################
-# Hospital data2 "Characteristics and Risk Factors for Hospitalization
+
+# Outcome age distribution "Characteristics and Risk Factors for Hospitalization
 # and Mortality among Persons with COVID-19 in Atlanta Metropolitan Area"
-# Hospital data https://www.fultoncountyga.gov/covid-19/epidemiology-reports
-
-# Paper data are until 31 May. 
-# Georgia pop from Levin et al
-# Seroprev: Estimated Community Seroprevalence of SARS-CoV-2 Antibodies — Two Georgia Counties
-# webpage with old Georgia files: https://github.com/CEIDatUGA/COVID-19-DATA/tree/master/georgia/ga_GDPH_daily_status_report/from-dashboard/raw-data
-
-# Note: Seroprevalence estimate is from Fulton + Kalb counties, but since
-# outcomes are only Fulton, we use the populaiton of Fulton alone to
-# estimate number of infections
+# Chishinga et al. Paper data are until 31 May. 
 age_Atlanta_outcome <- c("0-24", "25-34", "35-44", "45-54", "55-64", "65-74", "75+")
 Hospitalized_Atlanta <- c(18, 62, 79, 115, 172, 180, 260)
 ICU_Atlanta <- c(4, 13, 14, 33, 44, 57, 74)
 deaths_Atlanta <- c(2, 3, 2, 16, 33, 69, 170)
 
-# Official hospital count at May 08
-fultonCasesMay8 <- 3321
-nHospMay8 <- round(fultonCasesMay8 * 0.184)
-nICUMay8 <- round(fultonCasesMay8 * 0.051)
-nDeathsMay8 <- round(fultonCasesMay8 * 0.041)
+# Hospital data https://www.fultoncountyga.gov/covid-19/epidemiology-reports
+casesAtlantaFulton <- 1398 + round(0.425*399) # atlanta cases + portion of unknown
+Hospitalized_AtlantaFulton <- round(0.179 * casesAtlantaFulton)
+ICU_AtlantaFulton <- round(0.049 * casesAtlantaFulton)
+deaths_AtlantaFulton <- round(0.040 * casesAtlantaFulton)
 
-Hospitalized_Atlanta <- round(Hospitalized_Atlanta*nHospMay8/sum(Hospitalized_Atlanta))
-ICU_Atlanta <- round(ICU_Atlanta*nICUMay8/sum(ICU_Atlanta))
-deaths_Atlanta <- round(deaths_Atlanta*nDeathsMay8/sum(deaths_Atlanta))
+# use distribution of Chishinga with absolute numbers from governmnet report
+Hospitalized_Atlanta <- round(Hospitalized_Atlanta*Hospitalized_AtlantaFulton/sum(Hospitalized_Atlanta))
+ICU_Atlanta <- round(ICU_Atlanta*ICU_AtlantaFulton/sum(ICU_Atlanta))
+deaths_Atlanta <- round(deaths_Atlanta*deaths_AtlantaFulton/sum(deaths_Atlanta))
 
+# redistribute to match serology ages
 Hospitalized_Atlanta <- c(sum(Hospitalized_Atlanta[2:3]),
                           sum(Hospitalized_Atlanta[4:5]),
                           sum(Hospitalized_Atlanta[6:7]))
@@ -680,35 +838,37 @@ deaths_Atlanta <- c(sum(deaths_Atlanta[2:3]),
                     sum(deaths_Atlanta[4:5]),
                     sum(deaths_Atlanta[6:7]))
 
-# remove ranges 0-17 which had 0 positive serology samples
-# following Levin et al
+# Seroprev: Estimated Community Seroprevalence of SARS-CoV-2 Antibodies —
+# Two Georgia Counties, Biggs et al
+# remove ranges 0-17 which had 0 positive serology
+# samples following Levin et al
+# Note: Seroprevalence estimate is from Atlanta at Fulton + Kalb counties,
+# but since outcomes are only Fulton, we use the populaiton of Fulton alone to
+# estimate number of infections
 age_Atlanta_seroprev <- c("18-49", "50-64", "65+")
 seroprev_Atlanta <- c(3.3, 4.9, 0.7)
 seroprevL_Atlanta <- c(1.6, 1.8, 0.1)
 seroprevH_Atlanta <- c(6.4, 12.9, 4.5)
 
-# Population of Fulton county, excluding Kalb
-# https://censusreporter.org/profiles/05000US13121-fulton-county-ga/
-popAges <- c("0-9", "10-19", "20-29", "30-39", "40-49", "50-59",
-             "60-69", "70-79", "80+")
-population_Fulton <- c(121264, 139338, 170663, 167043, 147087, 136780,
-                   100174, 52860, 28728)
-population_Fulton <- c(sum(population_Fulton[3:5]),
-               population_Fulton[6]+population_Fulton[7]/2,
-               population_Fulton[7]/2+sum(population_Fulton[8:9]))
+# Population of Atlanta
+# https://data.census.gov/cedsci/table?tid=ACSST5Y2019.S0101&g=1600000US1304000
+atlantaPopAge <- c("0-5", "5-9", "10-14", "15-19", "20-24", "25-29",
+                   "30-34", "35-39", "40-44", "45-49", "50-54", "55-59",
+                   "60-64", "65-69", "70-74", "75-79", "80-84", "85+")
 
-# Atlanta metropolitan area
-# https://censusreporter.org/profiles/16000US1304000-atlanta-ga/
-#age_Atlanta_pops <- c("0-9", "10-19", "20-29", "30-39", "40-49", "50-59",
-#             "60-69", "70-79", "80+")
-#prop <- c(11, 10, 22, 17, 13, 11, 9, 5, 3)
-#atlantaPop <- round(prop*506804/100)
-#atlantaPop <- c(sum(atlantaPop[3:5]),
-#                atlantaPop[6]+atlantaPop[7]/2,
-#                atlantaPop[7]/2+sum(atlantaPop[8:9]))
+atlantaPop <- c(26577, 27559, 22290, 32902, 48054, 55760, 46168,
+                       36429, 31238, 29916, 27719, 26051, 21839, 18172,
+                       14829, 9696, 6821, 6780)
+# 10% of Atlanta is in DeKalb, which is not included in Fulton
+# country numbers. adjust population
+atlantaPop <- round(populationAtlanta*0.9)
+
+atlantaPop <- c(sum(atlantaPop[5:10])+round(atlantaPop[4]*2/5),
+                sum(atlantaPop[11:13]),
+                sum(atlantaPop[14:18]))
 
 Atlanta <- data.frame(Age=age_Atlanta_seroprev,
-                      Population=population_Fulton,
+                      Population=atlantaPop,
                       Prevalence=seroprev_Atlanta,
                       PrevalenceL=seroprevL_Atlanta,
                       PrevalenceH=seroprevH_Atlanta,
@@ -717,7 +877,7 @@ Atlanta <- data.frame(Age=age_Atlanta_seroprev,
                       Deaths=deaths_Atlanta,
                       Type="Seroprevalence",
                       Location="Atlanta",
-                      EndPointOutcome="2020-05-08",
+                      EndPointOutcome="2020-05-04",
                       EndPointCases="2020-05-03")
 
 
@@ -726,14 +886,11 @@ Atlanta <- data.frame(Age=age_Atlanta_seroprev,
 ######################
 # New York hospital and death data at 28 April
 # https://www1.nyc.gov/site/doh/covid/covid-19-data-archive.page
-
-# Seroprev data from Rosenberg et al Cumulative incidence and diagnosis
-# of SARS-CoV-2 infection in New York
-# Demography https://www.baruch.cuny.edu/nycdata/population-geography/pop-demography.htm
 age_NYC_outcome <- c("0-17", "18-44", "45-64", "65-74", "75+")
 Hospitalized_NYC <- c(281, 5872, 14366, 9404, 11391)
 deaths_NYC <- c(6, 497, 2742, 3027, 6013)
 
+# Demography https://www.baruch.cuny.edu/nycdata/population-geography/pop-demography.htm
 newYorkDemAgeVec <- c("0-5", "5-9", "10-14", "15-19",
                       "20-24", "25-29", "30-34", "35-39", "40-44",
                       "45-49", "50-54", "55-59", "60-64", "65-69",
@@ -746,14 +903,14 @@ population_NYC <- c(sum(population_NYC[1:4]), sum(population_NYC[5:9]),
                 sum(population_NYC[10:13]), sum(population_NYC[14:15]),
                 sum(population_NYC[16:18]))
 
-# seroprev in paper
+# Seroprev data from Rosenberg et al Cumulative incidence and diagnosis
+# of SARS-CoV-2 infection in New York
 age_NYC_seroprev <- c("18-34", "35-44", "45-54", "55+")
 seroprev_NYC_source <- c(21.8, 23.4, 26.5, 21.5)
 seroprevL_NYC_source <- c(19.2, 20.6, 23.8, 19.6)
 seroprevH_NYC_source <- c(24.4, 26.2, 29.2, 23.5)
 
-# interpolated seroprev (second value is mean of 1 and 2 in
-# original data. Last value is extrapolated
+# interpolated and extrapolated seroprev to match outcome bins
 seroprev_NYC <- c(21.8, 22.6, 26.5, 21.5, 21.5)
 seroprevL_NYC <- c(19.2, 19.9, 23.8, 19.6, 19.6)
 seroprevH_NYC <- c(24.4, 23.5, 29.2, 23.5, 23.5)
@@ -774,19 +931,8 @@ NYC <- data.frame(Age=age_NYC_outcome,
 ######################
 # Canada
 ######################
-# Ontario death data, and non-stratified hospital/ICU data:
-# https://covid-19.ontario.ca/covid-19-epidemiologic-summaries-public-health-ontario
-
-# Toronto data with stratified data:
+# Toronto data with stratified outcomes:
 # https://public.tableau.com/app/profile/tphseu/viz/EpidemiologicalSummaryofCOVID-19Cases/EpiSummary
-
-# https://health-infobase.canada.ca/covid-19/epidemiological-summary-covid-19-cases.html
-
-# https://covid-19.ontario.ca/data
-# https://data.ontario.ca/en/dataset/covid-19-cases-in-hospital-and-icu-by-ontario-health-region
-# https://health-infobase.canada.ca/covid-19/epidemiological-summary-covid-19-cases.html?stat=num&measure=deaths#a2
-# Seroprevalence from July seroprevalence report
-
 age_Toronto_outcome <- c("0-9", "10-19", "20-29", "30-39", "40-49", "50-59",
                 "60-69", "70-79", "80-89", "90+")
 
@@ -802,6 +948,11 @@ deaths_Toronto_sinceAug1 <- c(0, 0, 9, 23, 42, 133, 291, 441, 738, 523)
 deaths_Toronto_allTime <- c(1, 0, 10, 24, 51, 172, 410, 675, 1207, 950)
 deaths_Toronto <- deaths_Toronto_allTime - deaths_Toronto_sinceAug1
 
+# Ontario death data, and non-stratified hospital/ICU data:
+# https://covid-19.ontario.ca/covid-19-epidemiologic-summaries-public-health-ontario
+# https://covid-19.ontario.ca/data
+# https://data.ontario.ca/en/dataset/covid-19-cases-in-hospital-and-icu-by-ontario-health-region
+# https://health-infobase.canada.ca/covid-19/epidemiological-summary-covid-19-cases.html
 totalHospOntario <- 4672
 totalICUOntario <- 1000
 totalDeathsOntario <- 2777
@@ -827,6 +978,7 @@ deaths_Ontario <- round(c(deaths_Ontario_coarse[1]*ratiosToronto[[1]],
                     deaths_Ontario_coarse[4]*ratiosToronto[[4]],
                     deaths_Ontario_coarse[5]))
 
+# Seroprevalence from July seroprevalence report
 age_Ontario_seroprev <- c("0-9", "10-19", "20-29", "30-39", "40-49", "50-59",
                 "60-69", "70-79", "80+")
 seroprev_Ontario_male_H <- c(7.1, 4.2, 3.0, 2.8, 2.1, 1.3, 1.7, 2.0, 2.7)
@@ -865,19 +1017,11 @@ Ontario <- data.frame(Age=age_Ontario_seroprev,
                   EndPointOutcome="2020-07-31",
                   EndPointCases="2020-07-31")
 
-# Utah?
-# https://coronavirus.utah.gov/case-counts/
-# https://coronavirus.utah.gov/case-counts/
-
 ######################
 # Switzerland
 ######################
 # Hospital and death data from:
 # https://www.covid19.admin.ch/en/weekly-report/hosp?geoView=table
-# Seroprevalence data from:
-# Serology-informed estimates of SARS-CoV-2 infection
-# fatality risk in Geneva, Switzerland
-
 hospDataGE <- read.csv("../downloaded_data/switzerland/COVID19Hosp_geoRegion_AKL10_w.csv",
                  stringsAsFactors=FALSE) %>%
   dplyr::filter(., geoRegion=="GE" & datum_dboardformated=="2020-19" &
@@ -901,7 +1045,9 @@ deaths_Geneva <- c(deaths_Geneva[2],
                          deaths_Geneva[6]+deaths_Geneva[7]/2,
                          deaths_Geneva[7]/2+sum(deaths_Geneva[8:9]))
 
-# from seroprevalence study
+# Seroprevalence data from:
+# Serology-informed estimates of SARS-CoV-2 infection
+# fatality risk in Geneva, Switzerland
 age_Geneva_seroprev <- c("5-9", "10-19", "20-49", "50-64", "65+")
 infected_Geneva <- c(1200, 6100, 28800, 10300, 5700)
 infectedL_Geneva <- c(400, 3900, 21400, 7200, 3200)
@@ -913,9 +1059,6 @@ seroprevH_Geneva <- infectedH_Geneva/population_Geneva*100
 
 Geneva <- data.frame(Age=age_Geneva_seroprev[-1],
                   Population=population_Geneva[-1],
-                  #Prevalence=seroprev_Geneva_ext,
-                  #PrevalenceL=seroprevL_Geneva_ext,
-                  #PrevalenceH=seroprevH_Geneva_ext,
                   Prevalence=seroprev_Geneva[-1],
                   PrevalenceL=seroprevL_Geneva[-1],
                   PrevalenceH=seroprevH_Geneva[-1],
@@ -926,76 +1069,6 @@ Geneva <- data.frame(Age=age_Geneva_seroprev[-1],
                   Location="Geneva",
                   EndPointOutcome="2020-05-10",
                   EndPointCases="2020-05-06")
-
-
-######################
-# Belgium
-######################
-# Hospital data
-# https://covid-19.sciensano.be/fr/covid-19-situation-epidemiologique
-# Seroprevalence data:
-# Seroprevalence of IgG antibodies against SARS coronavirus 2 in
-# Belgium – a serial prospective cross-sectional nationwide study of residual samples
-# Death data:
-# Belgian Covid-19 Mortality, Excess Deaths, Number of
-# Deaths per Million, and Infection Fatality Rates 
-
-age_Belgium_outcome <- c("0-9", "10-19", "20-29", "30-39", "40-49", "50-59",
-                "60-69", "70-79", "80-89", "90+")
-Hospitalized_proportion_Belgium <- c(1.2, 0.5, 1.8, 4.1, 8.3, 15.4,
-                                     17.7, 21.0, 23.4, 6.7)/100
-totalHospBelgium <- 16061
-Hospitalized_Belgium <- round(Hospitalized_proportion_Belgium*totalHospBelgium)
-
-totalDeaths <- 8521
-hospitalDeaths <- 4041
-
-age_Belgium_deaths <- c("0-24", "25-44", "45-64", "65-74", "75-84", "85+")
-deaths_Belgium <- c(1, 30, 409, 1061, 2144, 5087)
-
-# reshape hospitalizations to fit deaths
-hB <- Hospitalized_Belgium
-Hospitalized_Belgium2 <- round(c(sum(hB[1:2])+hB[3]/2,
-                           hB[3]/2+hB[4]+hB[5]/2,
-                           hB[5]/2+hB[6]+hB[7]/2,
-                           hB[7]/2+hB[8]/2,
-                           hB[8]/2+hB[9]/2,
-                           hB[9]/2+hB[10]))
-
-# ratio between ICU and hospitalizations for Belgium is
-# availale up to 14 June, together with ICU age distribution
-# Extrapolate to used date
-propHospToICU <- 1696/17628
-totICU <- round(propHospToICU*totalHospBelgium)
-ICU_proportion_Belgium <- c(0.1, 0.5, 1.1, 3.3, 8.3, 20.9, 25.6, 26.9, 12.9, 0.4)/100
-ICU_Belgium <- round(totICU*ICU_proportion_Belgium)
-iB <- ICU_Belgium
-ICU_Belgium2 <- round(c(sum(iB[1:2])+iB[3]/2,
-                           iB[3]/2+iB[4]+iB[5]/2,
-                           iB[5]/2+iB[6]+iB[7]/2,
-                           iB[7]/2+iB[8]/2,
-                           iB[8]/2+iB[9]/2,
-                           iB[9]/2+iB[10]))
-
-# Seroprevalence
-seroprev_Belgium <- c(6.7, 6.6, 6.9, 4.6, 7.8, 14.7)
-seroprevL_Belgium <- c(4.7, 4.7, 5.2, 2.6, 4.7, 9.9)
-seroprevH_Belgium <- c(9.6, 9.2, 9.2, 8.0, 13.0, 21.8)
-
-population_Belgium <- c(3228894, 2956684, 3080528, 1147009, 690685, 326659)
-
-Belgium <- data.frame(Age=age_Belgium_deaths,
-                  Population=population_Belgium,
-                  Prevalence=seroprev_Belgium,
-                  PrevalenceL=seroprevL_Belgium,
-                  PrevalenceH=seroprevH_Belgium,
-                  Hospitalized=Hospitalized_Belgium2,
-                  ICU=ICU_Belgium2,
-                  Deaths=deaths_Belgium,
-                  Type="Seroprevalence_convenience",
-                  Location="Belgium",
-                  EndPointOutcome="2020-05-08",
-                  EndPointCases="2020-04-26")
 
 ####################################
 # Put countries together and export

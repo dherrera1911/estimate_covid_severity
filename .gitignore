@@ -1,5 +1,11 @@
 # Ignore big model files
 ./estimate_severity/data/processed_data/*.RDS
+./estimate_severity/data/plots/*
 ./estimate_severity/downloaded_data/*
-
+./estimate_severity/code/england.R
+./estimate_severity/code/value_adjusting.R
+./estimate_severity/code/7_ooh_deaths_truth.R
+./estimate_severity/code/england.R
+./*.pdf
+./*.sh
 

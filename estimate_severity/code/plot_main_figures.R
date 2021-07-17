@@ -283,6 +283,12 @@ outcomePropLit$Type <- factor(outcomePropLit$Type, levels=outcome,
   labels=outcome2)
 outcomePropLit$Outcome_type <- outcomePropLit$Type
 
+brazeauIFRind <- with(outcomePropLit, which(Study=="Brazeau" &
+                                            Outcome_type=="Fatal disease"))
+outcomePropLit$Proportion_L[brazeauIFRind] <- outcomePropLit$Proportion[brazeauIFRind]
+outcomePropLit$Proportion_H[brazeauIFRind] <- outcomePropLit$Proportion[brazeauIFRind]
+
+
 literaturePropPlot <- outcomePropLit %>%
   ggplot(., aes(x=meanAge, y=Proportion, color=Study)) +
   geom_point(size=locPointSize) +
@@ -322,8 +328,8 @@ literaturePropPlot <- outcomePropLit %>%
   ylab("% Infected with outcome")
 
 
-ggsave("../data/plots/5_literature_outcome_estimates.png", literaturePropPlot,
-       width=18, height=9, units="cm")
+#ggsave("../data/plots/5_literature_outcome_estimates.png", literaturePropPlot,
+#       width=18, height=9, units="cm")
 
 
 figure2 <- ggarrange(plotlist=list(lethalityPlot, literaturePropPlot),

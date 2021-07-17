@@ -1,0 +1,2 @@
+pdftk covid_severity_estimation_draft.pdf methods_covid_severity_estimation.pdf cat output covid_severity_estimation.pdf
+
