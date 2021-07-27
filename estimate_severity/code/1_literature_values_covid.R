@@ -1,11 +1,15 @@
 ############################################
 ############################################
+############################################
 # This script puts several literature values for
 # different covid variables into a tidy format
 # and exports them into files.
+# Mainly, it produces the .csv files with the IFR
+# estimates, and the data on hospital and ICU mortality
 #
 # Written by Daniel Herrera, November 2020
 # Contact at dherrera@fcien.edu.uy
+############################################
 ############################################
 ############################################
 
@@ -160,7 +164,7 @@ write.csv(literatureDf, "../data/collected_data/literature_rates_estimations.csv
 ############
 
 # overall letality of some studies
-criticalFatalityDf <- data.frame(fatalityICU = c(62, 46.4, 44.3),
+criticalMortalityDf <- data.frame(mortalityICU = c(62, 46.4, 44.3),
                                  study = c("Xu", "Veneces", "ICNARC"))
 
 ###############
@@ -172,7 +176,7 @@ age_ICNARC <- c("16-39", "40-49", "50-59", "60-69", "70-79", "80+")
 discharged_ICNARC <- c(734, 1131, 1982, 1689, 786, 137)
 deaths_ICNARC <- c(131, 311, 991, 1467, 1145, 191)
 ICU_ICNARC <- discharged_ICNARC + deaths_ICNARC
-criticalFatalityICNARC <- data.frame(Age=age_ICNARC,
+criticalMortalityICNARC <- data.frame(Age=age_ICNARC,
                                      Patients=ICU_ICNARC,
                                      Deaths=deaths_ICNARC,
                                      Study="ICNARC",
@@ -188,7 +192,7 @@ age_NYC <- c("20-29", "30-39", "40-49", "50-59", "60-69", "70-79",
 # absolute numbers are reported
 ICU_NYC <- c(8, 19, 28, 52, 69, 52, 23, 6)
 deaths_NYC <- c(0, 5, 6, 18, 22, 28, 17, 5)
-criticalFatalityCummings <- data.frame(Age=age_NYC,
+criticalMortalityCummings <- data.frame(Age=age_NYC,
                                      Patients=ICU_NYC,
                                      Deaths=deaths_NYC,
                                      Study="Cummings",
@@ -205,7 +209,7 @@ age_REVA <- c("16-39", "40-59", "60-74", "75+")
 # absolute numbers are reported
 ICU_REVA <- c(220, 1480, 1972, 572)
 deaths_REVA <- c(29, 302, 611, 306)
-criticalFatalityREVA <- data.frame(Age=age_REVA,
+criticalMortalityREVA <- data.frame(Age=age_REVA,
                                      Patients=ICU_REVA,
                                      Deaths=deaths_REVA,
                                      Study="REVA Network",
@@ -222,7 +226,7 @@ age_Ranzani <- c("20-39", "40-49", "50-59", "60-69", "70-79", "80+")
 # absolute numbers are reported
 ICU_Ranzani <- c(7512, 9478, 14034, 18058, 16848, 13757)
 deaths_ICU_Ranzani <- c(2225, 3503, 6732, 11372, 12257, 10913)
-criticalFatalityRanzani <- data.frame(Age=age_Ranzani,
+criticalMortalityRanzani <- data.frame(Age=age_Ranzani,
                                      Patients=ICU_Ranzani,
                                      Deaths=deaths_ICU_Ranzani,
                                      Study="Ranzani",
@@ -239,7 +243,7 @@ age_Oliveira <- c("18-54", "55-64", "65-74", "75+")
 # absolute numbers are reported
 ICU_Oliveira <- c(41, 36, 34, 20)
 deaths_ICU_Oliveira <- c(3, 5, 8, 10)
-criticalFatalityOliveira <- data.frame(Age=age_Oliveira,
+criticalMortalityOliveira <- data.frame(Age=age_Oliveira,
                                      Patients=ICU_Oliveira,
                                      Deaths=deaths_ICU_Oliveira,
                                      Study="Oliveira",
@@ -248,6 +252,29 @@ criticalFatalityOliveira <- data.frame(Age=age_Oliveira,
                                      EndPoint="2020-05-18")
 
 
+##############
+# Public data, Sweden
+##############
+# Data from https://www.icuregswe.org/en/data--results/covid-19-in-swedish-intensive-care/
+# Taken at September 1, well after the first epidemic wave, to avoid
+# admission to death delay biases
+age_Sweden <- c("20-29", "30-39", "40-49", "50-59",
+                "60-69", "70-79", "80-89", "90+")
+# absolute numbers are reported
+ICU_Sweden_men <- c(57, 76, 206, 503, 604, 362, 73, 2)
+ICU_Sweden_women <- c(38, 40, 83, 162, 179, 152, 34, 2)
+ICU_Sweden <- ICU_Sweden_men + ICU_Sweden_women
+deaths_ICU_Sweden_men <- c(3, 6, 22, 87, 146, 146, 33, 1)
+deaths_ICU_Sweden_women <- c(2, 1, 9, 14, 36, 45, 13, 2)
+deaths_ICU_Sweden <- deaths_ICU_Sweden_men + deaths_ICU_Sweden_women
+
+criticalMortalitySweden <- data.frame(Age=age_Sweden,
+                                     Patients=ICU_Sweden,
+                                     Deaths=deaths_ICU_Sweden,
+                                     Study="Sweden",
+                                     Type="ICU",
+                                     Location="Sweden",
+                                     EndPoint="2020-09-01")
 
 ##############
 # Pediatric Critical care, González-Dambrauskas et al
@@ -258,7 +285,7 @@ age_Gonzalez <- c("0-10", "11-18")
 # absolute numbers are reported
 ICU_Gonzalez <- c(12, 5)
 deaths_Gonzalez <- c(1, 0)
-criticalFatalityGonzalez <- data.frame(Age=age_Gonzalez,
+criticalMortalityGonzalez <- data.frame(Age=age_Gonzalez,
                                      Patients=ICU_Gonzalez,
                                      Deaths=deaths_Gonzalez,
                                      Study="Gonzalez-Dambrauskas",
@@ -274,7 +301,7 @@ age_Prata <- c("0-1", "1-3", "3-5", "5-12", "12-18")
 # absolute numbers are reported
 ICU_Prata <- c(19, 18, 7, 19, 14)
 deaths_Prata <- c(0, 1, 0, 0, 1)
-criticalFatalityPrata <- data.frame(Age=age_Prata,
+criticalMortalityPrata <- data.frame(Age=age_Prata,
                                      Patients=ICU_Prata,
                                      Deaths=deaths_Prata,
                                      Study="Prata-Barbosa",
@@ -289,7 +316,7 @@ criticalFatalityPrata <- data.frame(Age=age_Prata,
 ############
 
 # Globlal letality reported in different studies
-severeFatalityDf <- data.frame(letalityHosp = c(24.9, 21, 25.7, 22, 18.1, 4.4),
+severeMortalityDf <- data.frame(letalityHosp = c(24.9, 21, 25.7, 22, 18.1, 4.4),
                                  study = c("Westblade", "Richardson", "RECOVERY",
                                            "Karagiannidis", "Salje", "Xia"))
 
@@ -314,7 +341,7 @@ deaths_Richardson <- deathsFemale + deathsMale
 hospitalized_Richardson <- hospitalizedFemale + hospitalizedMale
 notDischarged <- c(7, 9, 52, 142, 319, 594, 771, 697, 369, 106)
 
-severeFatalityRichardson <- data.frame(Age=ages_Richardson,
+severeMortalityRichardson <- data.frame(Age=ages_Richardson,
                                        Patients=hospitalized_Richardson,
                                        Deaths= deaths_Richardson,
                                        Study="Richardson",
@@ -334,7 +361,7 @@ hospitalized_Karagiannidis <- patientsVentilator + patientsNoVentilator
 deaths_Karagiannidis <- round((patientsVentilator*mortalityVentilator +
                     patientsNoVentilator*mortalityNoVentilator)/100)
 
-severeFatalityKaragiannidis <- data.frame(Age=age_Karagiannidis,
+severeMortalityKaragiannidis <- data.frame(Age=age_Karagiannidis,
                                           Patients=hospitalized_Karagiannidis,
                                           Deaths= deaths_Karagiannidis,
                                           Study="Karagiannidis",
@@ -354,7 +381,7 @@ saljeVar <- ((letalityL_Salje-letalityH_Salje)/100/4)^2
 saljeNum <- (letality_Salje/100)*(1-letality_Salje/100)
 hospitalized_Salje <- round(saljeNum/saljeVar)
 deaths_Salje <- round(hospitalized_Salje*letality_Salje/100)
-severeFatalitySalje <- data.frame(Age=age_Salje,
+severeMortalitySalje <- data.frame(Age=age_Salje,
                                   Patients=hospitalized_Salje,
                                   Deaths=deaths_Salje,
                                   Study="Salje",
@@ -376,7 +403,7 @@ ongoingCare <- c(29, 5, 10, 5, 13, 27, 39, 71, 106, 195, 287, 380, 363,
 deaths_Docherty <- c(1, 0, 0, 1, 1, 5, 5, 11, 19, 37, 63, 124, 184, 243, 451,
           563, 653, 552, 356)
 resolved_Docherty <- deaths_Docherty + discharged_Docherty
-severeFatalityDocherty <- data.frame(Age=age_Docherty,
+severeMortalityDocherty <- data.frame(Age=age_Docherty,
                                   Patients=resolved_Docherty,
                                   Deaths=deaths_Docherty,
                                   Study="Docherty",
@@ -392,7 +419,7 @@ age_Berenguer <- c("0-10", "11-20", "21-30", "31-40", "41-50", "51-60",
 alive_Berenguer <- c(13, 18, 89, 210, 373, 483, 624, 675, 355, 61)
 deaths_Berenguer <- c(2, 0, 2, 5, 18, 68, 167, 357, 389, 122)
 patients_Berenguer <- alive_Berenguer + deaths_Berenguer
-severeFatalityBerenguer <- data.frame(Age=age_Berenguer,
+severeMortalityBerenguer <- data.frame(Age=age_Berenguer,
                                   Patients=patients_Berenguer,
                                   Deaths=deaths_Berenguer,
                                   Study="Berenguer",
@@ -407,7 +434,7 @@ age_Maquilon <- c("1-18", "19-39", "40-49", "50-59", "60-69", "70+")
 alive_Maquilon <- c(14, 141, 97, 87, 81, 28)
 deaths_Maquilon <- c(0, 3, 2, 4, 8, 37)
 patients_Maquilon <- alive_Maquilon + deaths_Maquilon
-severeFatalityMaquilon <- data.frame(Age=age_Maquilon,
+severeMortalityMaquilon <- data.frame(Age=age_Maquilon,
                                   Patients=patients_Maquilon,
                                   Deaths=deaths_Maquilon,
                                   Study="Maquilon",
@@ -425,7 +452,7 @@ age_Ranzani <- c("20-39", "40-49", "50-59", "60-69", "70-79", "80+")
 # absolute numbers are reported
 hospitalized_Ranzani <- c(30603, 33968, 43376, 48270, 41434, 34385)
 deaths_Ranzani <- c(3780, 6162, 11818, 20317, 22651, 22787)
-severeFatalityRanzani <- data.frame(Age=age_Ranzani,
+severeMortalityRanzani <- data.frame(Age=age_Ranzani,
                                      Patients=hospitalized_Ranzani,
                                      Deaths=deaths_Ranzani,
                                      Study="Ranzani",
@@ -437,7 +464,7 @@ severeFatalityRanzani <- data.frame(Age=age_Ranzani,
 ################
 # Netherlands Data
 ################
-hospDataNL <- read.csv("../downloaded_data/netherlands/COVID-19_casus_landelijk.csv",
+hospDataNL <- read.csv("../data/downloaded_datasets/netherlands/COVID-19_casus_landelijk.csv",
                        stringsAsFactors=FALSE, sep=";") %>%
   as_tibble(.) %>%
   dplyr::filter(., (Hospital_admission=="Yes") &
@@ -452,7 +479,7 @@ age_Netherlands <- hospDataNL$Agegroup
 deaths_Netherlands <- hospDataNL$nDead
 Hospitalized_Netherlands <- hospDataNL$nHosp
 
-severeFatalityNetherlands <- data.frame(Age=age_Netherlands,
+severeMortalityNetherlands <- data.frame(Age=age_Netherlands,
                                   Patients=Hospitalized_Netherlands,
                                   Deaths=deaths_Netherlands,
                                   Study="Public_data",
@@ -463,15 +490,16 @@ severeFatalityNetherlands <- data.frame(Age=age_Netherlands,
 #####################
 # Put together studies on hospitalized populations
 #####################
-controledStudies <- rbind(criticalFatalityICNARC, criticalFatalityCummings,
-                          criticalFatalityREVA,
-                          criticalFatalityRanzani,
-                          criticalFatalityGonzalez, criticalFatalityPrata,
-                          criticalFatalityOliveira,
-                          severeFatalityRichardson, severeFatalityKaragiannidis,
-                          severeFatalitySalje, severeFatalityNetherlands,
-                          severeFatalityRanzani, severeFatalityDocherty,
-                          severeFatalityBerenguer, severeFatalityMaquilon) %>%
+controledStudies <- rbind(criticalMortalityICNARC, criticalMortalityCummings,
+                          criticalMortalityREVA,
+                          criticalMortalityRanzani,
+                          criticalMortalityGonzalez, criticalMortalityPrata,
+                          criticalMortalityOliveira,
+                          criticalMortalitySweden,
+                          severeMortalityRichardson, severeMortalityKaragiannidis,
+                          severeMortalitySalje, severeMortalityNetherlands,
+                          severeMortalityRanzani, severeMortalityDocherty,
+                          severeMortalityBerenguer, severeMortalityMaquilon) %>%
   dplyr::mutate(., meanAge=mid_bin_age(Age))
 
 write.csv(controledStudies, "../data/collected_data/hospitalized_patient_studies.csv",

@@ -24,41 +24,18 @@ on the one side with the age distribution in hospitalizations
 on the other). It puts these data into the file 
 */data/collected_data/locations_serology_data.csv*
 
+### 3_estimate_hospital_mortality.R
 
-### 3_estimate_serology_outcome_rates.R
-
-Fit a bayesian regression model to the proportion of outcomes
-(severe disease, critical disease, deaths), taken over
-the number of estimated infections from seroprevalence data
-(or from testing in some cases). The model is defined
-in the file *3_estimate_serology_outcome_rates.stan*,
-and uses the data from *locations_serology_data.csv*.
-The fitted models are saved in
-*data/processed_data/3_serology_fits.RDS*.
-
-
-### 4_estimate_hospital_lethality.R
-
-Fits a bayesian regression model to the proportion of
+Fits a Bayesian regression model to the proportion of
 deaths among hospitalized patients (in general hospital
 or in ICU). Uses the model defined in
-*3_estimate_serology_outcome_rates.stan*, and the data
+*3_hospital_mortality.stan*, and the data
 from */data/collected_data/hospitalized_patient_studies.csv*.
 The fitted models are saved in
-*data/processed_data/4_hospital_lethality_fit.RDS*.
+*data/processed_data/3_hospital_mortality_fit.RDS*.
 
 
-### 5_estimate_outcome_rate_literature.R
-
-Estimates the rate of severe and critical outcomes
-through the indirect method, by taking the ratio between
-the IFR values reported in Levin et al,
-O'Driscoll et al, and Brazeau et al and the
-estimated in-hospital and in-ICU mortality 
-fitted in *4_estimate_hospital_lethality.R*.
-
-
-### 6_countries_values_correction.R
+### 4_countries_values_correction.R
 
 Apply the correction for out-of-hospital (ooh) and
 out-of-ICU (ooi) deaths to the number of severe and
@@ -68,10 +45,41 @@ sources. Takes as input the raw data file,
 and applies the corresponding corrections
 using the fitted in-hospital and in-ICU
 mortalities found in 
-*data/processed_data/4_hospital_lethality_fit.RDS*.
+*data/processed_data/3_hospital_mortality_fit.RDS*.
 
 
-### plot_results.R
+### 5_estimate_outcome_rate_literature.R
 
-Obtain the figures shown in the manuscript
+Estimates the rate of severe and critical outcomes
+through the indirect method, by taking the ratio between
+the IFR values reported in Levin et al,
+O'Driscoll et al, and Brazeau et al and the
+estimated in-hospital and in-ICU mortality 
+fitted in *3_estimate_hospital_mortality.R*.
+
+
+### 6_estimate_serology_outcome_rates.R
+
+Fit a Bayesian regression model to the proportion of outcomes
+(severe disease, critical disease, deaths), taken over
+the number of estimated infections from seroprevalence data
+(or from testing in some cases). The model is defined
+in the file *6_estimate_serology_outcome_rates.stan*,
+and uses the data from *locations_serology_data.csv*.
+The fitted models are saved in
+*data/processed_data/6_serology_fits.RDS*.
+
+
+### 7_get_changes_in_deaths.R
+
+Obtain the dynamics of death data for some controls.
+
+
+### plot_main_figures.R
+
+Obtain the main figures shown in the manuscript
+
+### plot_supplementary_figures.R
+
+Obtain the figures shown in the supplementary materials
 

@@ -9,6 +9,8 @@ library(matrixStats)
 
 # Return a vector with the mean age in each bin
 mid_bin_age <- function(binsVec) {
+  defaultW <- getOption("warn")
+  options(warn = -1)
   ageBins <- strsplit(binsVec, "-") %>%
     lapply(., as.numeric) %>%
     lapply(., mean) %>%
@@ -18,6 +20,7 @@ mid_bin_age <- function(binsVec) {
     ageBins[naInd] <- mean(c(naVal, 90))
   }
   # extract last value
+  options(warn = defaultW)
   return(ageBins)
 }
 
@@ -202,114 +205,48 @@ ooh_deaths_estimation <- function(mortalitySamples,
 }
 
 
-# Fit gamma distribution to CIs
-gammaPars <- function(casesQuantiles, quants=c(0.025, 0.5, 0.975)) { #
-  pars <- get.gamma.par(p=quants, q=casesQuantiles,
-                        plot=FALSE, verbose=FALSE, show.output=FALSE)
-}
 
-# Fit gamma distribution to CIs
-fit_gamma_ci <- function(meanEstimate, lower, upper) {
-  gammaShape <- NULL
-  gammaRate <- NULL
-  for (r in c(1:length(meanEstimate))) {
-    pars <- NA
-    if (lower[r]!=meanEstimate[r] & upper[r]!=meanEstimate[r]) {
-      if (meanEstimate[r]<0.01) {
-        pars <- gammaPars(c(lower[r], meanEstimate[r], upper[r])*100)
-        pars[2] <- pars[2]*100
-      } else if (meanEstimate[r]>10) {
-        pars <- gammaPars(c(lower[r], meanEstimate[r], upper[r])/10)
-        pars[2] <- pars[2]/10
-      } else {
-        pars <- gammaPars(c(lower[r], meanEstimate[r], upper[r]))
-      }
-    }
-    if (lower[r]==meanEstimate[r] | upper[r]==meanEstimate[r]) {
-      pars <- gammaPars(c(lower[r], upper[r])*100, quants=c(0.025, 0.975))
-      pars[2] <- pars[2]*100
-    }
-    gammaShape[r] <- pars[1]
-    gammaRate[r] <- pars[2]
-  }
-  return(list(gammaShape=gammaShape, gammaRate=gammaRate))
-}
-
-
-## Fit beta distribution to CIs
-betaPars <- function(casesQuantiles, quants=c(0.025, 0.5, 0.975)) { #
-  pars <- get.beta.par(p=quants, q=casesQuantiles,
-                       plot=FALSE, verbose=FALSE, show.output=FALSE,
-                       tol=0.01)
-}
-
+# beta fitting by moment matching
 fit_beta_ci <- function(meanEstimate, lower, upper) {
-  shape1 <- NULL
-  shape2 <- NULL
-  for (r in c(1:length(meanEstimate))) {
-    pars <- NA
-    if (lower[r]!=meanEstimate[r] & upper[r]!=meanEstimate[r]) {
-      pars <- betaPars(c(lower[r], meanEstimate[r], upper[r]))
-    }
-    if (lower[r]==meanEstimate[r] | is.na(pars[1])) {
-      pars <- betaPars(c(lower[r], upper[r]), quants=c(0.025, 0.975))
-    }
-    shape1[r] <- pars[1]
-    shape2[r] <- pars[2]
+  var <- ((upper-lower)/4)^2
+  commonFactor <- meanEstimate*(1-meanEstimate)/var - 1
+  shape1 <- meanEstimate*commonFactor
+  shape2 <- (1-meanEstimate)*commonFactor
+  fittingDf <- data.frame(meanEstimate=meanEstimate, lower=lower, upper=upper,
+                    shape1=NA, # stores estimates of shape1
+                    shape2=NA, # same for shape 2
+                    priorMean=NA, # the mean of the fitted prior
+                    priorLB=NA,  # the 0.025 quantile of the fitted prior
+                    priorUB=NA) # the 0.975 quantile of the fitted prior
+  fittingDf$shape1 <- shape1
+  fittingDf$shape2 <- shape2
+  fittingDf$priorMean <- shape1/(shape1+shape2)
+  for (i in c(1:nrow(fittingDf))) {
+    shape1i <- fittingDf$shape1[i]
+    shape2i <- fittingDf$shape2[i]
+    fittingDf$priorLB[i] <- qbeta(p=.025, shape1=shape1i, shape2=shape2i)
+    fittingDf$priorUB[i] <- qbeta(p=.975, shape1=shape1i, shape2=shape2i)
   }
-  return(list(shape1=shape1, shape2=shape2))
+  return(fittingDf)
 }
 
 
-########
-# Home made function for getting beta parameters
-# https://stats.stackexchange.com/questions/112614/determining-beta-distribution-parameters-alpha-and-beta-from-two-arbitrary
-#######
-#
-# Logistic transformation of the Beta CDF.
-#
-f.beta <- function(alpha, beta, x, lower=0, upper=1) {
-  p <- pbeta((x-lower)/(upper-lower), alpha, beta)
-  log(p/(1-p))
+# Extract stan params means and CrI undoing predictor normalization
+extract_model_params_norm <- function(model, xCenter, xSd) {
+  posterior <- rstan::extract(model)
+  slopeSamples <- posterior$ageSlope
+  interceptSamples <- posterior$intercept
+  slopeSamplesOrig <- slopeSamples/xSd 
+  interceptSamplesOrig <- interceptSamples - slopeSamples*xCenter/xSd
+  paramNames <- c("ageSlope", "intercept")
+  paramMeans <- c(mean(slopeSamplesOrig), mean(interceptSamplesOrig))
+  ciL <- c(quantile(slopeSamplesOrig, probs=0.025),
+              quantile(interceptSamplesOrig, probs=0.025))
+  ciH <- c(quantile(slopeSamplesOrig, probs=0.975),
+              quantile(interceptSamplesOrig, probs=0.975))
+  paramDf <- data.frame(param=paramNames, meanVal=paramMeans,
+                        lower=ciL, higher=ciH)
+  return(paramDf)
 }
-
-# Sums of squares.
-
-delta <- function(fit, actual) sum((fit-actual)^2)
-
-# The objective function handles the transformed parameters `theta` and
-# uses `f.beta` and `delta` to fit the values and measure their discrepancies.
-
-objective <- function(theta, x, prob, ...) {
-  ab <- exp(theta) # Parameters are the *logs* of alpha and beta
-  fit <- f.beta(ab[1], ab[2], x, ...)
-  return (delta(fit, prob))
-}
-
-
-
-#
-# Solve two problems.
-#
-par(mfrow=c(1,2))
-alpha <- 15; beta <- 22 # The true parameters
-for (x in list(c(1e-3, 2e-3), c(1/3, 2/3))) {
-  x.p <- f.beta(alpha, beta, x)        # The correct values of the p_i
-  start <- log(c(1e1, 1e1))            # A good guess is useful here
-  sol <- nlm(objective, start, x=x, prob=x.p, lower=0, upper=1,
-             typsize=c(1,1), fscale=1e-12, gradtol=1e-12)
-  parms <- exp(sol$estimate)           # Estimates of alpha and beta
-  #
-  # Display the actual and estimated values.
-  #
-  print(rbind(Actual=c(alpha=alpha, beta=beta), Fit=parms))
-  #
-  # Plot the true and estimated CDFs.
-  #      
-  curve(pbeta(x, alpha, beta), 0, 1, n=1001, lwd=2)
-  curve(pbeta(x, parms[1], parms[2]), n=1001, add=TRUE, col="Red")
-  points(x, pbeta(x, alpha, beta))
-}
-
 
 

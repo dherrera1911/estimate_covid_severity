@@ -32,14 +32,13 @@ dataAlpha <- 0.5
 countryData <- read.csv("../data/collected_data/locations_serology_data_corrected.csv",
                         stringsAsFactors=FALSE) %>%
   as_tibble(.)
-serologyModels <- readRDS("../data/processed_data/3_serology_fits_corrected.RDS")
-#serologyModels <- readRDS("../data/processed_data/3_serology_fits_corrected_Phi.RDS")
+serologyModels <- readRDS("../data/processed_data/6_serology_fits_corrected.RDS")
 serologyPlotName <- "../data/plots/figure1.png"
 serologySamplesPlotName <- "../data/plots/3_serology_samples_corrected.png"
 serologyCsvName <- "../data/processed_data/3_serology_fits_corrected.csv"
 
 # predefine some variables
-outcome <- c("Hospitalized", "ICU", "Deaths")
+outcome <- c("Severe", "Critical", "Deaths")
 outcome2 <- c("Severe disease", "Critical disease", "Fatal disease")
 
 # pivot longer the serology data
@@ -60,13 +59,13 @@ longCountryData$Type <- factor(longCountryData$Type,
                                        labels=labelsType)
 
 # extract model posteriors and put into data frame
-ageVec <- seq(2.5, 90, 5)
+ageVec <- seq(5, 90, 10)
 serologyPosterior <- list()
 outcomeFitDf <- NULL
 serologySamplesDf <- tibble()
 for (no in c(1:length(outcome))) {
   oStr <- outcome[no]
-  stdAgeVec <- (ageVec-serologyModels$meanAge[[oStr]])/serologyModels$sdAge[[oStr]]
+  stdAgeVec <- (ageVec-serologyModels$meanAge)/serologyModels$sdAge
   serologyPosterior[[oStr]] <- proportion_samples(model=serologyModels$model[[oStr]],
                                                   ageVec=stdAgeVec)
   tempFitDf <- data.frame(meanAge=ageVec,
@@ -95,7 +94,7 @@ serologyPlot <- longCountryData %>%
   ggplot(., aes(x=meanAge, y=Outcomes*100/(Population*Prevalence/100),
                 color=Type, group=as.character(Location), facet=Outcome_type)) +
   geom_point(size=locPointSize, alpha=dataAlpha) +
-  geom_line(alpha=locLineAlpha, size=locLineSize, alpha=dataAlpha) +
+  geom_line(alpha=locLineAlpha, size=locLineSize) +
   facet_rep_grid(.~Outcome_type, repeat.tick.labels="left") +
   geom_line(data=outcomeFitDf, aes(x=meanAge, y=outcomeProp*100),
             color="black", linetype="solid", size=regLineSize,
@@ -104,14 +103,14 @@ serologyPlot <- longCountryData %>%
               aes(x=meanAge, ymin=outcome_L*100, ymax=outcome_H*100),
               alpha=ribbonAlpha, colour=NA, show.legend=FALSE,
               inherit.aes=FALSE) +
-  geom_segment(aes(x=ageMeanMyo, xend=ageMeanMyo, y=myocarditisProp[1]*100,
-                   yend=myocarditisProp[2]*100), color="black", size=1,
-               inherit.aes=FALSE) +
-  geom_segment(aes(x=ageMeanMyo+2, xend=myoTextX-20, y=100/4000, yend=myoTextY*1.5),
-               arrow=arrow(length=unit(0.2, "cm")), color="black",
-               inherit.aes=FALSE, size=0.3) +
-  geom_text(aes(x=myoTextX, y=myoTextY), label="Israel vaccine\nmyocarditis rate", color="black",
-            inherit.aes=FALSE, size=3.1) +
+#  geom_segment(aes(x=ageMeanMyo, xend=ageMeanMyo, y=myocarditisProp[1]*100,
+#                   yend=myocarditisProp[2]*100), color="black", size=1,
+#               inherit.aes=FALSE) +
+#  geom_segment(aes(x=ageMeanMyo+2, xend=myoTextX-20, y=100/4000, yend=myoTextY*1.5),
+#               arrow=arrow(length=unit(0.2, "cm")), color="black",
+#               inherit.aes=FALSE, size=0.3) +
+#  geom_text(aes(x=myoTextX, y=myoTextY), label="Israel vaccine\nmyocarditis rate", color="black",
+#            inherit.aes=FALSE, size=3.1) +
   scale_color_brewer(palette="Dark2") +
   theme_bw() +
   scale_y_continuous(trans='log10', labels=scaleFun,
@@ -132,18 +131,42 @@ serologyPlot <- longCountryData %>%
 ggsave(serologyPlotName, serologyPlot, width=18, height=9.5, units="cm")
 
 
+#posteriorTraces <- NULL
+#for (oStr in outcome) {
+#  posteriorTemp <- tidybayes::gather_draws(serologyModels$model[[oStr]],
+#                                           ageSlope, ageSlopeSigma,
+#                                           intercept, interceptSigma) %>%
+#    dplyr::mutate(., type=oStr)
+#  posteriorTraces <- rbind(posteriorTraces, posteriorTemp)
+#}
+#
+#serologyTrace <- dplyr::mutate(posteriorTraces, .chain=factor(.chain))  %>%
+#  ggplot(., aes(x=.iteration, y=.value, color=.chain)) +
+#  geom_line() +
+#  facet_grid(type~.variable, scales="free_y") +
+#  theme_bw()
+#
+#pairs(serologyModels$model[["Deaths"]], pars=c("ageSlope", "ageSlopeSigma", "intercept",
+#                                "interceptSigma"))
+#pairs(serologyModels$model[["Deaths"]], pars=c("locationSlope"))
+
 ##############
 # Extract serology data summary statistics
 ##############
 
 # Get param summary statistics
 mainParams <- c("ageSlope", "ageSlopeSigma", "intercept", "interceptSigma")
-modelSummary <- list()
+modelSummary <- NULL
 for (no in c(1:length(outcome))) {
   oStr <- outcome[no]
-  modelSummary[[oStr]] <- summary(serologyModels$model[[oStr]],
-                          pars=mainParams)
+  modelParams <- extract_model_params_norm(serologyModels$model[[oStr]],
+    xCenter=serologyModels$meanAge, xSd=serologyModels$sdAge)
+  modelParams$outcome <- oStr
+  modelSummary <- rbind(modelSummary, modelParams)
 }
+
+allPars <- summary(serologyModels$model[["Deaths"]], pars=mainParams)[["summary"]]
+allPars <- signif(allPars[, c("mean", "2.5%", "97.5%")], 3)
 
 # Compare ages
 ratiosAges <- data.frame()
@@ -151,8 +174,8 @@ for (no in c(1:length(outcome))) {
   oStr <- outcome[no]
   agesComparison <- proportion_samples(model=serologyModels$model[[oStr]],
            ageVec=c(22.5, 72.5),
-           meanAge=serologyModels$meanAge[[oStr]],
-           sdAge=serologyModels$sdAge[[oStr]])
+           meanAge=serologyModels$meanAge,
+           sdAge=serologyModels$sdAge)
   ratiosTemp <- agesComparison$samples %>%
     dplyr::select(., -age) %>%
     tidyr::pivot_wider(., names_from=ageInd, values_from=proportion,
@@ -171,8 +194,8 @@ for (no in c(1:length(outcome))) {
   oStr <- outcome[no]
   agesComparison <- proportion_samples(model=serologyModels$model[[oStr]],
            ageVec=c(20, 20),
-           meanAge=serologyModels$meanAge[[oStr]],
-           sdAge=serologyModels$sdAge[[oStr]])
+           meanAge=serologyModels$meanAge,
+           sdAge=serologyModels$sdAge)
   ratiosTemp <- agesComparison$samples %>%
     dplyr::select(., -age) %>%
     dplyr::filter(., ageInd==1) %>%
@@ -184,13 +207,24 @@ for (no in c(1:length(outcome))) {
 }
 
 
-exportFit <- dplyr::mutate(outcomeFitDf, Percentage=signif(outcomeProp*100, digits=3),
-                           Percentage_L=signif(outcome_L*100, digits=3),
-                           Percentage_H=signif(outcome_H*100, digits=3)) %>%
+exportFit <- dplyr::mutate(outcomeFitDf, Percentage=outcomeProp*100,
+                           Percentage_L=outcome_L*100,
+                           Percentage_H=outcome_H*100) %>%
   dplyr::select(., -outcomeProp, -outcome_L, -outcome_H)
 
 write.csv(exportFit, file=serologyCsvName, row.names=FALSE)
 
+estimateString <- as.character(signif(exportFit$Percentage, 3))
+lowerString <- as.character(signif(exportFit$Percentage_L, 3))
+upperString <- as.character(signif(exportFit$Percentage_H, 3))
+fullString <- paste(estimateString, " (", lowerString, "-",
+  upperString, ")", sep="")
+tidyFitDf <- data.frame(meanAge=exportFit$meanAge,
+                        outcome=exportFit$Outcome_type,
+                        interval=fullString)
+write.csv(tidyFitDf,
+          file="../data/processed_data/3_serology_fits_corrected_tidy.csv",
+          row.names=FALSE)
 
 ############################
 ############################
@@ -200,49 +234,51 @@ write.csv(exportFit, file=serologyCsvName, row.names=FALSE)
 ############################
 ############################
 
-lethalityData <- read.csv("../data/collected_data/hospitalized_patient_studies.csv",
+mortalityData <- read.csv("../data/collected_data/hospitalized_patient_studies.csv",
                         stringsAsFactors=FALSE) %>%
   as_tibble(.)
-lethalityModels <- readRDS("../data/processed_data/4_hospital_lethality_fit.RDS")
+mortalityModels <- readRDS("../data/processed_data/3_hospital_mortality_fit.RDS")
 
 # get fitted line
 ageVec <- seq(2.5, 90, 5)
 letType <- c("Hospitalized", "ICU")
-lethalityPosterior <- list()
-lethalityFitDf <- NULL
-lethalitySamplesDf <- tibble()
+mortalityPosterior <- list()
+mortalityFitDf <- NULL
+mortalitySamplesDf <- tibble()
 for (no in c(1:length(letType))) {
   oStr <- letType[no]
   # extract model fit results
-  stdAgeVec <- (ageVec-lethalityModels$meanAge[[oStr]])/lethalityModels$sdAge[[oStr]]
-  lethalityPosterior[[oStr]] <- proportion_samples(model=lethalityModels$model[[oStr]],
+  stdAgeVec <- (ageVec-mortalityModels$meanAge[[oStr]])/mortalityModels$sdAge[[oStr]]
+  mortalityPosterior[[oStr]] <- proportion_samples(model=mortalityModels$model[[oStr]],
                                                   ageVec=stdAgeVec)
   tempFitDf <- data.frame(meanAge=ageVec,
-                          outcomeProp=lethalityPosterior[[oStr]]$prop_mean,
-                          outcome_L=lethalityPosterior[[oStr]]$prop_L,
-                          outcome_H=lethalityPosterior[[oStr]]$prop_H,
+                          outcomeProp=mortalityPosterior[[oStr]]$prop_mean,
+                          outcome_L=mortalityPosterior[[oStr]]$prop_L,
+                          outcome_H=mortalityPosterior[[oStr]]$prop_H,
                           Type=oStr)
-  lethalityFitDf <- rbind(lethalityFitDf, tempFitDf)
-  tempSamplesDf <- lethalityPosterior[[oStr]]$samples
+  mortalityFitDf <- rbind(mortalityFitDf, tempFitDf)
+  tempSamplesDf <- mortalityPosterior[[oStr]]$samples
   tempSamplesDf$meanAge <- rep(ageVec, max(tempSamplesDf$sample))
   tempSamplesDf$Type <- oStr
-  lethalitySamplesDf <- as_tibble(rbind(tempSamplesDf, lethalitySamplesDf))
+  mortalitySamplesDf <- as_tibble(rbind(tempSamplesDf, mortalitySamplesDf))
 }
 
 letType2 <- c("Hospital", "ICU")
-lethalityData$Type <- factor(lethalityData$Type, levels=letType, labels=letType2)
-lethalityData$Location <- factor(lethalityData$Location)
-lethalityFitDf$Type <- factor(lethalityFitDf$Type, levels=letType, labels=letType2)
+mortalityData$Type <- factor(mortalityData$Type, levels=letType, labels=letType2)
+mortalityData$Location <- factor(mortalityData$Location)
+mortalityFitDf$Type <- factor(mortalityFitDf$Type, levels=letType, labels=letType2)
+mortalityFitDf <- dplyr::mutate(mortalityFitDf, outcomeProp=outcomeProp*100,
+                                outcome_L=outcome_L*100, outcome_H=outcome_H*100)
 
-lethalityPlot <- lethalityData %>%
+mortalityPlot <- mortalityData %>%
   ggplot(., aes(x=meanAge, y=Deaths/Patients*100, color=Location, facet=Type)) +
   geom_point(size=locPointSize) +
   geom_line(alpha=locLineAlpha, size=locLineSize) +
   facet_rep_wrap(Type~., nrow=2, strip.position="top") +
-  geom_line(data=lethalityFitDf, aes(y=outcomeProp*100),
+  geom_line(data=mortalityFitDf, aes(y=outcomeProp),
             color="black", linetype="solid", size=regLineSize) +
-  geom_ribbon(data=lethalityFitDf,
-              aes(x=meanAge,ymin=outcome_L*100, ymax=outcome_H*100),
+  geom_ribbon(data=mortalityFitDf,
+              aes(x=meanAge,ymin=outcome_L, ymax=outcome_H),
               alpha=ribbonAlpha*0.8, colour=NA, show.legend=FALSE,
               inherit.aes=FALSE) +
   scale_y_continuous(trans='log10', labels=scaleFun) +
@@ -263,8 +299,26 @@ lethalityPlot <- lethalityData %>%
   xlab("Age") +
   ylab("Mortality (%)")
 
-ggsave("../data/plots/4_hospital_lethality_regression.png", lethalityPlot,
+ggsave("../data/plots/3_hospital_mortality_regression.png", mortalityPlot,
        width=10, height=14, units="cm")
+
+
+### Extract and export in table format the estimates of mortality data
+write.csv(mortalityFitDf, file="../data/processed_data/3_hospital_mortality_fit.csv",
+          row.names=FALSE)
+
+estimateString <- as.character(signif(mortalityFitDf$outcomeProp, 2))
+lowerString <- as.character(signif(mortalityFitDf$outcome_L, 2))
+upperString <- as.character(signif(mortalityFitDf$outcome_H, 2))
+fullString <- paste(estimateString, " (", lowerString, "-",
+  upperString, ")", sep="")
+tidyFitDf <- data.frame(meanAge=mortalityFitDf$meanAge,
+                        outcome=mortalityFitDf$Type,
+                        interval=fullString)
+
+write.csv(tidyFitDf,
+          file="../data/processed_data/3_hospital_mortality_fit_tidy.csv",
+          row.names=FALSE)
 
 
 ############################
@@ -288,6 +342,8 @@ brazeauIFRind <- with(outcomePropLit, which(Study=="Brazeau" &
 outcomePropLit$Proportion_L[brazeauIFRind] <- outcomePropLit$Proportion[brazeauIFRind]
 outcomePropLit$Proportion_H[brazeauIFRind] <- outcomePropLit$Proportion[brazeauIFRind]
 
+driscollInd <- outcomePropLit$Study == "Driscoll"
+outcomePropLit$Study[driscollInd] <- "O'Driscoll"
 
 literaturePropPlot <- outcomePropLit %>%
   ggplot(., aes(x=meanAge, y=Proportion, color=Study)) +
@@ -302,17 +358,17 @@ literaturePropPlot <- outcomePropLit %>%
               aes(x=meanAge, ymin=outcome_L*100, ymax=outcome_H*100),
               alpha=ribbonAlpha, colour=NA, show.legend=FALSE,
               inherit.aes=FALSE) +
-  geom_segment(aes(x=ageMeanMyo, xend=ageMeanMyo, y=myocarditisProp[1]*100,
-                   yend=myocarditisProp[2]*100), color="black", size=1) +
-  geom_segment(aes(x=ageMeanMyo+2, xend=myoTextX-20, y=100/4000, yend=myoTextY*1.5),
-               arrow=arrow(length=unit(0.2, "cm")), color="black",
-               inherit.aes=FALSE, size=0.3) +
-  geom_text(aes(x=myoTextX-5, y=myoTextY*0.5), label="Israel vaccine\nmyocarditis rate",
-            color="black", inherit.aes=FALSE, size=3.1) +
+#  geom_segment(aes(x=ageMeanMyo, xend=ageMeanMyo, y=myocarditisProp[1]*100,
+#                   yend=myocarditisProp[2]*100), color="black", size=1) +
+#  geom_segment(aes(x=ageMeanMyo+2, xend=myoTextX-20, y=100/4000, yend=myoTextY*1.5),
+#               arrow=arrow(length=unit(0.2, "cm")), color="black",
+#               inherit.aes=FALSE, size=0.3) +
+#  geom_text(aes(x=myoTextX-5, y=myoTextY*0.5), label="Israel vaccine\nmyocarditis rate",
+#            color="black", inherit.aes=FALSE, size=3.1) +
   scale_color_brewer(palette="Set1") +
   scale_y_continuous(trans='log10', labels=scaleFun,
                      breaks=10^c(-3, -2, -1, 0, 1, 2),
-                     limits=10^c(-3.5, 2)) +
+                     limits=10^c(-3.9, 2)) +
   theme_bw() +
   theme(strip.background =element_rect(fill="white", color="white"),
         strip.text=element_text(face="bold"),
@@ -328,11 +384,7 @@ literaturePropPlot <- outcomePropLit %>%
   ylab("% Infected with outcome")
 
 
-#ggsave("../data/plots/5_literature_outcome_estimates.png", literaturePropPlot,
-#       width=18, height=9, units="cm")
-
-
-figure2 <- ggarrange(plotlist=list(lethalityPlot, literaturePropPlot),
+figure2 <- ggarrange(plotlist=list(mortalityPlot, literaturePropPlot),
           ncol=2, widths=c(0.25, 0.74), labels=c("(A)", "(B)"))
 
 ggsave("../data/plots/figure2.png", figure2, width=20, height=10, units="cm")

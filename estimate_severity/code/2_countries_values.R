@@ -1,6 +1,5 @@
 #################################
 #################################
-#################################
 #  
 #  This script puts together the information
 #  reported in several studies, and by official
@@ -11,10 +10,10 @@
 #  
 #  Daniel Herrera-Esposito gathered the data from the
 #  cited sources, and wrote the code.
+#  03/07/2021
 #  
 #  Direct any questions to dherrera@fcien.edu.uy
 #  
-#  03/07/2021
 #  
 #################################
 #################################
@@ -104,13 +103,13 @@ Iceland <- data.frame(Age=icelandSeroprevAges,
                       Prevalence=icelandSeroprev_2,
                       PrevalenceL=icelandSeroprevL_2,
                       PrevalenceH=icelandSeroprevH,
-                      Hospitalized=severeCases_Iceland,
-                      ICU=criticalCases_Iceland,
+                      Severe=severeCases_Iceland,
+                      Critical=criticalCases_Iceland,
                       Deaths=deaths_Iceland,
                       Type="Seroprevalence",
                       Location="Iceland",
-                      EndPointOutcome="2020-06-15",
-                      EndPointCases="2020-06-15")
+                      EndPointOutcome="2020-04-04",
+                      EndPointCases="2020-04-04")
 
 ################
 # New Zealand
@@ -124,8 +123,8 @@ age_NZ <- c("0-9", "10-19", "20-29", "30-39", "40-49", "50-59",
                 "60-69", "70-79", "80-89", "90+")
 # absolute numbers are reported
 Tested_NZ <- c(92, 196, 517, 395, 308, 319, 222, 91, 32, 9)
-Hospitalized_NZ <- c(1, 3, 7, 16, 16, 29, 27, 27, 16, 9)
-ICU_NZ <-    c(0, 1, 1, 1, 3, 4, 6, 10, 8, 5)
+Severe_NZ <- c(1, 3, 7, 16, 16, 29, 27, 27, 16, 9)
+Critical_NZ <-    c(0, 1, 1, 1, 3, 4, 6, 10, 8, 5)
 deaths_NZ <- c(0, 0, 0, 0, 0, 2, 3, 7,  8, 5)
 
 population_NZ <- extract_country_population(popM=popM, popF=popF,
@@ -142,8 +141,8 @@ NewZealand <- data.frame(Age=age_NZ,
                          Prevalence=prevalence_NZ,
                          PrevalenceL=prevalenceL_NZ,
                          PrevalenceH=prevalenceH_NZ,
-                         Hospitalized=Hospitalized_NZ,
-                         ICU=ICU_NZ,
+                         Severe=Severe_NZ,
+                         Critical=Critical_NZ,
                          Deaths=deaths_NZ,
                          Type="Testing",
                          Location="New_Zealand",
@@ -159,8 +158,8 @@ NewZealand <- data.frame(Age=age_NZ,
 age_Korea <- c("0-9", "10-19", "20-29", "30-39", "40-49", "50-59",
             "60-69", "70-79", "80+")
 Tested_Korea <- c(89, 397, 2174, 780, 1037, 1490, 1007, 517, 312)
-ICU_Korea <- c(0, 0, 2, 4, 2, 26, 50, 82, 117)
-Hospitalized_Korea <- c(0, 1, 19, 14, 32, 128, 174, 199, 189)
+Critical_Korea <- c(0, 0, 2, 4, 2, 26, 50, 82, 117)
+Severe_Korea <- c(0, 1, 19, 14, 32, 128, 174, 199, 189)
 # Deaths from Severe COVID-19 Illness: Risk Factors and Its Burden on Critical Care Resources
 deaths_Korea2 <- c(0, 0, 0, 2, 1, 14, 36, 67, 107)
 
@@ -178,8 +177,8 @@ Korea <- data.frame(Age=age_Korea,
                     Prevalence=prevalence_Korea,
                     PrevalenceL=prevalenceL_Korea,
                     PrevalenceH=prevalenceH_Korea,
-                    Hospitalized=Hospitalized_Korea,
-                    ICU=ICU_Korea,
+                    Severe=Severe_Korea,
+                    Critical=Critical_Korea,
                     Deaths=deaths_Korea2,
                     Type="Testing",
                     Location="South_Korea",
@@ -193,7 +192,7 @@ Korea <- data.frame(Age=age_Korea,
 # https://cnecovid.isciii.es/covid19/#documentaci%C3%B3n-y-datos
 
 age_Spain <- c("0-9", "10-19", "20-29", "30-39", "40-49", "50-59", "60-69", "70+")
-spainDailyOutcome <- read.csv("../downloaded_data/spain/casos_hosp_uci_def_sexo_edad_provres.csv",
+spainDailyOutcome <- read.csv("../data/downloaded_datasets/spain/casos_hosp_uci_def_sexo_edad_provres.csv",
                     stringsAsFactors=FALSE) %>%
   as_tibble(.) %>%
   dplyr::mutate(., fecha=lubridate::date(fecha))
@@ -226,7 +225,7 @@ Hospitalized_Spain <- spainHosp$Hospitalized
 ICU_Spain <- spainICU$ICU
 deaths_Spain <- spainDeaths$Deaths
 
-# Spain seroprevalence Pastor-Barriuso et al
+# Spain seroprevalence Pollán et al
 # Spain seroprevalence from:
 # Prevalence of SARS-CoV-2 in Spain (ENE-COVID): a nationwide,
 # population-based seroepidemiological study
@@ -244,8 +243,8 @@ Spain <- data.frame(Age=age_Spain,
                     Prevalence=seroprev_Spain,
                     PrevalenceL=seroprevL_Spain,
                     PrevalenceH=seroprevH_Spain,
-                    Hospitalized=Hospitalized_Spain,
-                    ICU=ICU_Spain,
+                    Severe=Hospitalized_Spain,
+                    Critical=ICU_Spain,
                     Deaths=deaths_Spain,
                     Type="Seroprevalence",
                     Location="Spain",
@@ -272,6 +271,14 @@ seroprev_Ireland <- c(2.3, 1.4, 1.8, 1.5, 1.7)
 seroprevL_Ireland <- c(0.8, 0.4, 0.7, 0.5, 0.6)
 seroprevH_Ireland <- c(5.1, 3.5, 3.7, 3.6, 3.8)
 
+# Apply test characteristics correction to seroprevalence data
+sensitivity <- 0.93
+specificity <- 1
+factor <- 1/(sensitivity + specificity - 1)
+seroprev_Ireland <- (seroprev_Ireland/100 + specificity - 1)*factor*100
+seroprevL_Ireland <- seroprevL_Ireland*factor
+seroprevH_Ireland <- seroprevH_Ireland*factor
+
 population_Ireland <- extract_country_population(popM=popM, popF=popF,
                                                  countryName="Ireland",
                                                  ageBins=c("0-14", age_Ireland_outcome, "65+"))
@@ -283,8 +290,8 @@ Ireland <- data.frame(Age=age_Ireland_outcome,
                       Prevalence=seroprev_Ireland,
                       PrevalenceL=seroprevL_Ireland,
                       PrevalenceH=seroprevH_Ireland,
-                      Hospitalized=Hospitalized_Ireland,
-                      ICU=ICU_Ireland,
+                      Severe=Hospitalized_Ireland,
+                      Critical=ICU_Ireland,
                       Deaths=deaths_Ireland,
                       Type="Seroprevalence",
                       Location="Ireland",
@@ -296,22 +303,26 @@ Ireland <- data.frame(Age=age_Ireland_outcome,
 # Sweden
 ######################
 
-# ICU data from:
+# ICU data and death ICU data from:
 # https://www.icuregswe.org/en/data--results/covid-19-in-swedish-intensive-care/
 # On the information panel, look for the "Period" menu on the left
+# and for Vardresultat to get deaths
 # https://portal.icuregswe.org/siri/report/corona.alderkon
 age_Sweden_ICU <- c("0-9", "10-19", "20-29", "30-39", "40-49", "50-59",
                 "60-69", "70-79", "80-89", "90+")
 ICU_Sweden <- c(5, 7, 73, 91, 231, 527, 599, 386, 78, 1)
+ICU_deaths_Sweden <- c(0, 0, 5, 6, 29, 90, 146, 146, 35, 1)
 
-# Deaths taken from Levin for June 18, ICU taken until May 24
+# Age stratified COVID-19 deaths from:
+# https://www.socialstyrelsen.se/statistik-och-data/statistik/statistik-om-covid-19/statistik-over-antal-avlidna-i-covid-19/
+# Extracted up to week 21
+# Section Avlidna med covid-19 veckovis
 age_Sweden_deaths <- c("0-9", "10-19", "20-29", "30-39", "40-49", "50-59",
                 "60-69", "70-79", "80-89", "90+")
-deathsSweden_september <- c(1, 0, 10, 18, 45, 164, 406, 1269, 2436, 1527)
+deathsSweden <- c(0, 0, 12, 12, 40, 133, 314, 987, 1894, 1161)
 
-age_Sweden_outcome_Levin <- c("0-19", "20-49", "50-69", "70+")
-deaths_Sweden_Levin <- c(1, 63, 504, 4485)
-deathsSweden <- round(deathsSweden_september*sum(deaths_Sweden_Levin)/sum(deathsSweden_september))
+ooiDeaths_Sweden <- deathsSweden - ICU_deaths_Sweden
+criticalSweden <- ICU_Sweden + ooiDeaths_Sweden
 
 # Seroprevalence from Levin et al, citation:
 # 154. Sweden Public Health Authority. COVID-19 Report for Week 24 - COVID-19 veckorapport vecka 24. 2020.
@@ -346,8 +357,8 @@ Sweden <- data.frame(Age=age_Sweden_ICU,
                      Prevalence=seroprev_Sweden_ICU,
                      PrevalenceL=seroprevL_Sweden_ICU,
                      PrevalenceH=seroprevH_Sweden_ICU,
-                     Hospitalized=NA,
-                     ICU=ICU_Sweden,
+                     Severe=NA,
+                     Critical=criticalSweden,
                      Deaths=deathsSweden,
                      Type="Seroprevalence_convenience",
                      Location="Sweden",
@@ -424,8 +435,8 @@ Belgium <- data.frame(Age=age_Belgium_deaths,
                   Prevalence=seroprev_Belgium,
                   PrevalenceL=seroprevL_Belgium,
                   PrevalenceH=seroprevH_Belgium,
-                  Hospitalized=severeCases_Belgium,
-                  ICU=ICU_Belgium2,
+                  Severe=severeCases_Belgium,
+                  Critical=ICU_Belgium2,
                   Deaths=deaths_Belgium,
                   Type="Seroprevalence_convenience",
                   Location="Belgium",
@@ -496,8 +507,8 @@ Ile_de_France <- data.frame(Age=age_France_outcome,
                          Prevalence=seroprev_France,
                          PrevalenceL=seroprevL_France,
                          PrevalenceH=seroprevH_France,
-                         Hospitalized=severeCases_ilDeFrance,
-                         ICU=NA,
+                         Severe=severeCases_ilDeFrance,
+                         Critical=NA,
                          Deaths=ilDeFrance_totalDeath,
                          Type="Seroprevalence",
                          Location="Ile_de_France",
@@ -508,8 +519,6 @@ Ile_de_France <- data.frame(Age=age_France_outcome,
 ######################
 # England
 ######################
-
-
 # population data from Levin et al
 age_England_Pop_Levin <- c("0-17", "18-24", "25-34", "35-44", "45-54", "55-64",
                        "65-74", "75+")
@@ -524,7 +533,8 @@ population_England <- c(3496750, 3135711, 3258677, 2079229, 5267401,
                         1777547, 1338005, 1254688)
 
 # Seroprevalence from:
-# 1) Antibody prevalence for SARS-CoV-2 following the peak of the pandemic in England: REACT2 study in 100,000 adults
+# 1) SARS-CoV-2 antibody prevalence in England following the first peak of the pandemic
+# (supplementary)
 # 2) Seroprevalence of SARS-CoV-2 antibodies in children: a prospective multicentre cohort study
 age_England_seroprev <- c("0-17", "18-24", "25-34", "35-44", "45-54", "55-64",
                        "65-74", "75+")
@@ -607,8 +617,8 @@ England1 <- data.frame(Age=age_England_ICU,
                        Prevalence=seroprev_England[-1],
                        PrevalenceL=seroprevL_England[-1],
                        PrevalenceH=seroprevH_England[-1],
-                       Hospitalized=NA,
-                       ICU=criticalEngland,
+                       Severe=NA,
+                       Critical=criticalEngland,
                        Deaths=NA,
                        Type="Seroprevalence",
                        Location="England",
@@ -690,8 +700,8 @@ England2 <- data.frame(Age=age_England_Hosp,
                        Prevalence=seroprev_England2,
                        PrevalenceL=seroprevL_England2,
                        PrevalenceH=seroprevH_England2,
-                       Hospitalized=severeCases_England,
-                       ICU=NA,
+                       Severe=severeCases_England,
+                       Critical=NA,
                        Deaths=NA,
                        Type="Seroprevalence",
                        Location="England",
@@ -721,8 +731,8 @@ England3 <- data.frame(Age=age_England_death_Levin,
                        Prevalence=seroprev_England,
                        PrevalenceL=seroprevL_England,
                        PrevalenceH=seroprevH_England,
-                       Hospitalized=NA,
-                       ICU=NA,
+                       Severe=NA,
+                       Critical=NA,
                        Deaths=deaths_England_Levin,
                        Type="Seroprevalence",
                        Location="England",
@@ -738,10 +748,8 @@ England <- rbind(England1, England2, England3)
 
 # Hospital data
 # https://data.rivm.nl/geonetwork/srv/dut/catalog.search#/metadata/2c4357c8-76e4-4662-9574-1deb8a73f724?tab=general
-# More death data:
-# https://www.rivm.nl/documenten/epidemiologische-situatie-covid-19-in-nederland-11-mei-2020
 
-hospDataNL <- read.csv("../downloaded_data/netherlands/COVID-19_casus_landelijk.csv",
+hospDataNL <- read.csv("../data/downloaded_datasets/netherlands/COVID-19_casus_landelijk.csv",
                        stringsAsFactors=FALSE, sep=";") %>%
   as_tibble(.) %>%
   dplyr::filter(., (Hospital_admission=="Yes" | Deceased=="Yes") &
@@ -753,9 +761,9 @@ hospDataNL <- read.csv("../downloaded_data/netherlands/COVID-19_casus_landelijk.
   dplyr::mutate(., meanAge=mid_bin_age(Agegroup)) %>%
   dplyr::filter(., Agegroup!="<50")
 
-# Deaths for people under 50 are aggregated in this dataset,
-# but can be disagregated using other publicly available data,
-# as done below
+# Deaths for people under 50 are aggregated in the previous
+# dataset, but are disagregated here:
+# https://www.rivm.nl/documenten/epidemiologische-situatie-covid-19-in-nederland-11-mei-2020
 deathsTot_U50 <- c(0, 1, 3, 10, 25)
 hospDataNL$nDead[which(hospDataNL$meanAge<50)] <- deathsTot_U50
 
@@ -778,7 +786,7 @@ nTests <- c(457, 129, 226, 696, 429, 485, 377, 301)
 nPositive <- c(4, 1, 12, 24, 11, 8, 7, 7)
 rawPrevalence <- nPositive/nTests
 rawPrevalenceCI <- binomial_confint(nTests, nPositive)
-adjustedPrevalence <- (rawPrevalence+specificity-1)/(sensitivity+specificity-1)
+adjustedPrevalence <- (rawPrevalence/100+specificity-1)/(sensitivity+specificity-1)*100
 adjustedPrevalenceL <- rawPrevalenceCI$lower/(sensitivity+specificity-1)
 adjustedPrevalenceH <- rawPrevalenceCI$upper/(sensitivity+specificity-1)
 
@@ -796,8 +804,8 @@ Netherlands <- data.frame(Age=age_Netherlands_outcome,
                           Prevalence=adjustedPrevalence*100,
                           PrevalenceL=adjustedPrevalenceL*100,
                           PrevalenceH=adjustedPrevalenceH*100,
-                          Hospitalized=Severe_Netherlands,
-                          ICU=NA,
+                          Severe=Severe_Netherlands,
+                          Critical=NA,
                           Deaths=deaths_Netherlands,
                           Type="Seroprevalence",
                           Location="Netherlands",
@@ -850,6 +858,14 @@ seroprev_Atlanta <- c(3.3, 4.9, 0.7)
 seroprevL_Atlanta <- c(1.6, 1.8, 0.1)
 seroprevH_Atlanta <- c(6.4, 12.9, 4.5)
 
+### Correct for test characteristics
+sensitivity <- 0.932
+specificity <- 0.99
+factor <- 1/(sensitivity + specificity - 1)
+seroprev_Atlanta <- (seroprev_Atlanta/100 + specificity - 1)*factor*100
+seroprevL_Atlanta <- seroprevL_Atlanta*factor
+seroprevH_Atlanta <- seroprevH_Atlanta*factor
+
 # Population of Atlanta
 # https://data.census.gov/cedsci/table?tid=ACSST5Y2019.S0101&g=1600000US1304000
 atlantaPopAge <- c("0-5", "5-9", "10-14", "15-19", "20-24", "25-29",
@@ -861,7 +877,7 @@ atlantaPop <- c(26577, 27559, 22290, 32902, 48054, 55760, 46168,
                        14829, 9696, 6821, 6780)
 # 10% of Atlanta is in DeKalb, which is not included in Fulton
 # country numbers. adjust population
-atlantaPop <- round(populationAtlanta*0.9)
+atlantaPop <- round(atlantaPop*0.9)
 
 atlantaPop <- c(sum(atlantaPop[5:10])+round(atlantaPop[4]*2/5),
                 sum(atlantaPop[11:13]),
@@ -872,14 +888,17 @@ Atlanta <- data.frame(Age=age_Atlanta_seroprev,
                       Prevalence=seroprev_Atlanta,
                       PrevalenceL=seroprevL_Atlanta,
                       PrevalenceH=seroprevH_Atlanta,
-                      Hospitalized=Hospitalized_Atlanta,
-                      ICU=ICU_Atlanta,
+                      Severe=Hospitalized_Atlanta,
+                      Critical=ICU_Atlanta,
                       Deaths=deaths_Atlanta,
                       Type="Seroprevalence",
                       Location="Atlanta",
                       EndPointOutcome="2020-05-04",
                       EndPointCases="2020-05-03")
 
+# Remove oldest age, which has invalid prevalence after
+# adjusting for test characteristics
+Atlanta <- Atlanta[-3,]
 
 ######################
 # New York City, USA
@@ -920,8 +939,8 @@ NYC <- data.frame(Age=age_NYC_outcome,
                   Prevalence=seroprev_NYC,
                   PrevalenceL=seroprevL_NYC,
                   PrevalenceH=seroprevH_NYC,
-                  Hospitalized=Hospitalized_NYC,
-                  ICU=NA,
+                  Severe=Hospitalized_NYC,
+                  Critical=NA,
                   Deaths=deaths_NYC,
                   Type="Seroprevalence",
                   Location="NYC",
@@ -1009,8 +1028,8 @@ Ontario <- data.frame(Age=age_Ontario_seroprev,
                   Prevalence=seroprev_Ontario,
                   PrevalenceL=seroprevL_Ontario,
                   PrevalenceH=seroprevH_Ontario,
-                  Hospitalized=Hospitalized_Ontario,
-                  ICU=ICU_Ontario,
+                  Severe=Hospitalized_Ontario,
+                  Critical=ICU_Ontario,
                   Deaths=deaths_Ontario,
                   Type="Seroprevalence_convenience",
                   Location="Ontario",
@@ -1022,12 +1041,12 @@ Ontario <- data.frame(Age=age_Ontario_seroprev,
 ######################
 # Hospital and death data from:
 # https://www.covid19.admin.ch/en/weekly-report/hosp?geoView=table
-hospDataGE <- read.csv("../downloaded_data/switzerland/COVID19Hosp_geoRegion_AKL10_w.csv",
+hospDataGE <- read.csv("../data/downloaded_datasets/switzerland/COVID19Hosp_geoRegion_AKL10_w.csv",
                  stringsAsFactors=FALSE) %>%
   dplyr::filter(., geoRegion=="GE" & datum_dboardformated=="2020-19" &
                 altersklasse_covid19!="Unbekannt")
 
-deathDataGE <- read.csv("../downloaded_data/switzerland/COVID19Death_geoRegion_AKL10_w.csv",
+deathDataGE <- read.csv("../data/downloaded_datasets/switzerland/COVID19Death_geoRegion_AKL10_w.csv",
                  stringsAsFactors=FALSE) %>%
   dplyr::filter(., geoRegion=="GE" & datum_dboardformated=="2020-19" &
                 altersklasse_covid19!="Unbekannt")
@@ -1062,8 +1081,8 @@ Geneva <- data.frame(Age=age_Geneva_seroprev[-1],
                   Prevalence=seroprev_Geneva[-1],
                   PrevalenceL=seroprevL_Geneva[-1],
                   PrevalenceH=seroprevH_Geneva[-1],
-                  Hospitalized=Hospitalized_Geneva,
-                  ICU=NA,
+                  Severe=Hospitalized_Geneva,
+                  Critical=NA,
                   Deaths=deaths_Geneva,
                   Type="Seroprevalence",
                   Location="Geneva",

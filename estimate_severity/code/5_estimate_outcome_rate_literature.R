@@ -1,3 +1,18 @@
+###########################################
+###########################################
+#
+#
+#This script uses the IFR estimates collected in
+#script 1_literature_values_covid.R, together with
+#the models fitted in script 3_estimate_hospital_mortality.R
+#to perform the ratio-of-ratios method described in
+#the manuscript. This generates estimates of ISR and ICR
+#for each IFR study
+#
+#
+###########################################
+###########################################
+
 library(dplyr)
 library(tidyr)
 library(ggplot2)
@@ -15,115 +30,50 @@ literatureIFR <- read.csv("../data/collected_data/literature_rates_estimations.c
                            stringsAsFactors=FALSE) %>%
   as_tibble(.) %>%
   dplyr::filter(., Type=="IFR") %>%
-  dplyr::mutate(., Type="Deaths")
+  dplyr::mutate(., Type="Deaths",
+  Proportion=Proportion/100, Proportion_L=Proportion_L/100,
+  Proportion_H=Proportion_H/100)
 
-# load fitted lethality data
-lethalityFit <- readRDS("../data/processed_data/4_hospital_lethality_fit.RDS")
+# so that the betas can fit, take the value with lower bound = mean
+# and set the lower bound a bit smaller
+equalProps <- with(literatureIFR, which(Proportion==Proportion_L))
+literatureIFR$Proportion_L[equalProps] <- literatureIFR$Proportion_L[equalProps]*0.9 
 
-#outcomes <- c("Hospitalized", "ICU")
-#ageVec <- literatureIFR$meanAge
-#lethalityPosterior <- list()
-#outputDf <- literatureIFR
-#for (no in c(1:length(outcomes))) {
-#  oStr <- outcomes[no]
-#  outcomeFit <- lethalityFit$model[[oStr]]
-#  meanAge <- lethalityFit$meanAge[[oStr]]
-#  sdAge <- lethalityFit$sdAge[[oStr]]
-#  lethalityPosterior[[oStr]] <- proportion_samples(model=outcomeFit,
-#                                                   ageVec=ageVec,
-#                                                   meanAge=meanAge,
-#                                                   sdAge=sdAge)
-#  ifrVec <- rep(literatureIFR$Proportion, max(lethalityPosterior[[oStr]]$sample))
-#  outcomeProp <- ifrVec/lethalityPosterior[[oStr]]$samples$proportion
-#  # Find mean and quantiles of samples
-#  outcomePropMat <- matrix(outcomeProp, nrow=nrow(literatureIFR),
-#            ncol=max(lethalityPosterior[[oStr]]$sample))
-#  prop_mean <- rowMeans(outcomePropMat)
-#  ciProp <- matrixStats::rowQuantiles(outcomePropMat, probs=c(0.025, 0.975))
-#  # Put into data frame
-#  tempDf <- data.frame(Age=literatureIFR$Age,
-#                      Proportion=prop_mean,
-#                      Proportion_L=ciProp[,1],
-#                      Proportion_H=ciProp[,2],
-#                      Study=literatureIFR$Study,
-#                      Type=oStr,
-#                      meanAge=ageVec)
-#  outputDf <- rbind(outputDf, tempDf)
-#}
-#
-#fileName <- "../data/processed_data/5_literature_outcome_estimates.csv"
-#write.csv(outputDf, fileName, row.names=FALSE)
-#
-
-# Do the same but sampling from the IFR distributios
-outcomes <- c("Hospitalized", "ICU")
-ageVec <- literatureIFR$meanAge
-lethalityPosterior <- list()
-
+# load fitted mortality data
+mortalityFit <- readRDS("../data/processed_data/3_hospital_mortality_fit.RDS")
 
 ##############
-# Fit gamma distribution IFR estimates
+# Fit beta distribution IFR estimates
 ##############
-library(rriskDistributions)
+fittedBetas <- fit_beta_ci(meanEstimate=literatureIFR$Proportion,
+                            lower=literatureIFR$Proportion_L,
+                            upper=literatureIFR$Proportion_H)
 
-# Just check that the gammas and the quantiles match
-#meanPrev <- NULL
-#lPrev <- NULL
-#hPrev <- NULL
-#for (r in c(1:length(meanlog))) {
-##  meanPrev[r] <- qgamma(p=c(0.5), rate=gammaRate[r], shape=gammaShape[r])
-##  lPrev[r] <- qgamma(p=c(0.025), rate=gammaRate[r], shape=gammaShape[r])
-##  hPrev[r] <- qgamma(p=c(0.975), rate=gammaRate[r], shape=gammaShape[r])
-#  meanPrev[r] <- qlnorm(p=c(0.5), sdlog=sdlog[r], meanlog=meanlog[r])
-#  lPrev[r] <- qlnorm(p=c(0.025), sdlog=sdlog[r], meanlog=meanlog[r])
-#  hPrev[r] <- qlnorm(p=c(0.975), sdlog=sdlog[r], meanlog=meanlog[r])
-#}
-#plot(log(literatureIFR$Proportion), log(meanPrev))
-#abline(0,1)
-#plot(log(literatureIFR$Proportion_L), log(lPrev))
-#abline(0,1)
-#plot(log(literatureIFR$Proportion_H), log(hPrev))
-#abline(0,1)
-#
-#plot(log(b1$Proportion), log(meanB))
-#abline(0,1)
-#plot(log(b1$Proportion_L), log(lowerB))
-#abline(0,1)
-#plot(log(b1$Proportion_H), log(upperB))
-#abline(0,1)
-#lele <- which(literatureIFR$Proportion_L/lPrev>1.5)
+#plot(log(fittedBetas$meanEstimate), log(fittedBetas$priorMean)); abline(0,1)
+literatureIFR$betaShape1 <- fittedBetas$shape1
+literatureIFR$betaShape2 <- fittedBetas$shape2
 
-proportion <- literatureIFR$Proportion
-proportionL <- literatureIFR$Proportion_L
-proportionL[3] <- proportionL[3]
-proportionH <- literatureIFR$Proportion_H
-proportionH[3] <- proportionH[3]
-
-parametersGamma <- fit_gamma_ci(proportion, proportionL, proportionH)
-
-#paramslnorm <- fit_lnorm_ci(proportion, proportionL, proportionH)
-#paramsBeta <- fit_beta_ci(proportion, proportionL, proportionH)
-
-parametersGamma$gammaShape[c(2:3)] <- NA
-parametersGamma$gammaShape[c(2:3)] <- NA
-parametersGamma$gammaShape[which(literatureIFR$Study=="Brazeau")] <- NA
-parametersGamma$gammaRate[which(literatureIFR$Study=="Brazeau")] <- NA
+brazeauInd <- which(literatureIFR$Study=="Brazeau")
+literatureIFR$betaShape1[brazeauInd] <- NA
+literatureIFR$betaShape1[brazeauInd] <- NA
 
 ifrSamples <- 500
-outcomes <- c("Hospitalized", "ICU")
+outcomes1 <- c("Hospitalized", "ICU")
+outcomes2 <- c("Severe", "Critical")
 ageVec <- literatureIFR$meanAge
-lethalityPosterior <- list()
-outputDf <- literatureIFR
+mortalityPosterior <- list()
+outputDf <- dplyr::select(literatureIFR, Age, Proportion, Proportion_L,
+                          Proportion_H, Study, Type, meanAge)
 
 for (no in c(1:length(outcomes))) {
   print(paste("Outcome:", no))
   oStr <- outcomes[no]
   lowValsList <- list()
   highValsList <- list()
-  outcomeFit <- lethalityFit$model[[oStr]]
-  meanAge <- lethalityFit$meanAge[[oStr]]
-  sdAge <- lethalityFit$sdAge[[oStr]]
-  lethalityPosterior[[oStr]] <- proportion_samples(model=outcomeFit,
+  outcomeFit <- mortalityFit$model[[oStr]]
+  meanAge <- mortalityFit$meanAge[[oStr]]
+  sdAge <- mortalityFit$sdAge[[oStr]]
+  mortalityPosterior[[oStr]] <- proportion_samples(model=outcomeFit,
                                                    ageVec=ageVec,
                                                    meanAge=meanAge,
                                                    sdAge=sdAge)
@@ -133,25 +83,24 @@ for (no in c(1:length(outcomes))) {
   for (s in c(1:ifrSamples)) {
     print(paste("IFR sample:", s))
     sampleIFR <- NULL
-    for (r in c(1:length(parametersGamma$gammaShape))) {
-      if (!is.na(parametersGamma$gammaShape[r])) {
-        #sampleIFR[r] <- rlnorm(1, meanlog=meanlog[r], sdlog=sdlog[r])
-        sampleIFR[r] <- rgamma(1, shape=parametersGamma$gammaShape[r],
-                               rate=parametersGamma$gammaRate[r])
+    for (r in c(1:nrow(literatureIFR))) {
+      if (!is.na(literatureIFR$betaShape1[r])) {
+        sampleIFR[r] <- rbeta(1, shape1=literatureIFR$betaShape1[r],
+                               shape2=literatureIFR$betaShape2[r])
       } else {
         sampleIFR[r] <- literatureIFR$Proportion[r]
       }
     }
-    ifrVec <- rep(sampleIFR, max(lethalityPosterior[[oStr]]$sample))
-    tempOutcomeProp <- ifrVec/lethalityPosterior[[oStr]]$samples$proportion
+    ifrVec <- rep(sampleIFR, max(mortalityPosterior[[oStr]]$sample))
+    tempOutcomeProp <- ifrVec/mortalityPosterior[[oStr]]$samples$proportion
     tempOutcomeProp <- pmin(tempOutcomeProp, 100)
     # Find mean and quantiles of samples
     outcomePropMat <- matrix(tempOutcomeProp, nrow=nrow(literatureIFR),
-              ncol=max(lethalityPosterior[[oStr]]$sample))
+              ncol=max(mortalityPosterior[[oStr]]$sample))
     ind1 <- round(dim(outcomePropMat)[2]*0.025)
     ind2 <- round(dim(outcomePropMat)[2]*0.975)
     # collect the extreme values to compute CI. due to memory insufficiency
-    for (r in c(1:length(parametersGamma$gammaShape))) {
+    for (r in c(1:nrow(literatureIFR))) {
       first025 <- sort(outcomePropMat[r,])[1:ind1]
       last025 <- sort(outcomePropMat[r,])[ind2:ncol(outcomePropMat)]
       if (s==1) {
@@ -177,10 +126,14 @@ for (no in c(1:length(outcomes))) {
                       Proportion_L=lowerProp,
                       Proportion_H=upperProp,
                       Study=literatureIFR$Study,
-                      Type=oStr,
+                      Type=outcomes2[no],
                       meanAge=ageVec)
   outputDf <- rbind(outputDf, tempDf)
 }
+
+outputDf <- dplyr::mutate(outputDf, Proportion=Proportion*100,
+                          Proportion_L=Proportion_L*100,
+                          Proportion_H=Proportion_H*100)
 
 fileName <- "../data/processed_data/5_literature_outcome_estimates.csv"
 write.csv(outputDf, fileName, row.names=FALSE)
