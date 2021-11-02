@@ -942,7 +942,7 @@ NYC <- data.frame(Age=age_NYC_outcome,
                   Severe=Hospitalized_NYC,
                   Critical=NA,
                   Deaths=deaths_NYC,
-                  Type="Seroprevalence",
+                  Type="Seroprevalence_convenience",
                   Location="NYC",
                   EndPointOutcome="2020-04-28",
                   EndPointCases="2020-04-28")
@@ -1041,9 +1041,9 @@ Ontario <- data.frame(Age=age_Ontario_seroprev,
 ######################
 # Hospital and death data from:
 # https://www.covid19.admin.ch/en/weekly-report/hosp?geoView=table
-hospDataGE <- read.csv("../data/downloaded_datasets/switzerland/COVID19Hosp_geoRegion_AKL10_w.csv",
+hospDataGE <- read.csv("../data/downloaded_datasets/switzerland/COVID19Hosp_geoRegion_AKL10_w_2.csv",
                  stringsAsFactors=FALSE) %>%
-  dplyr::filter(., geoRegion=="GE" & datum_dboardformated=="2020-19" &
+  dplyr::filter(., geoRegion=="GE" & datum_dboardformated=="2020-30" &
                 altersklasse_covid19!="Unbekannt")
 
 deathDataGE <- read.csv("../data/downloaded_datasets/switzerland/COVID19Death_geoRegion_AKL10_w.csv",
@@ -1076,6 +1076,8 @@ seroprev_Geneva <- infected_Geneva/population_Geneva*100
 seroprevL_Geneva <- infectedL_Geneva/population_Geneva*100
 seroprevH_Geneva <- infectedH_Geneva/population_Geneva*100
 
+# NOTE TO SELF: unremove youngest age, because hospitalization and deaths
+# are 0, so no uncertainty about that
 Geneva <- data.frame(Age=age_Geneva_seroprev[-1],
                   Population=population_Geneva[-1],
                   Prevalence=seroprev_Geneva[-1],
@@ -1089,15 +1091,233 @@ Geneva <- data.frame(Age=age_Geneva_seroprev[-1],
                   EndPointOutcome="2020-05-10",
                   EndPointCases="2020-05-06")
 
+
+######################
+# Indiana, USA
+######################
+age_Indiana <- c("18-39", "40-59", "60+")
+
+# Hospital, death & ICU stratification
+# from Menachemi et al 2021, JPHMP
+Hospitalized_Indiana <- c(424, 1235, 2347)
+ICU_Indiana <- c(59, 239, 655)
+deaths_Indiana <- c(14, 81, 1004)
+
+# Total hospitalized from:
+# https://www.regenstrief.org/covid-dashboard/
+age_Indiana_dashboard <- c("0-4", "5-19", "20-29", "30-39", "40-49", "50-59",
+                      "60-69", "70-79", "80+")
+# Data April 29
+#Hospitalized_Indiana_dash <- c(17, 30, 189, 353, 583, 971, 1274,
+#                               1174, 1107)
+#totalICU_Indiana <- 1079
+#hospitalDeaths_Indiana <- 712
+# Data May 14 
+Hospitalized_Indiana_dash <- c(22, 46, 278, 483, 752, 1252, 1585,
+                               1452, 1429)
+totalICU_Indiana <- 1371
+# put together stratification at April 30 with total in May 14
+ICU_Indiana <- round(totalICU_Indiana*ICU_Indiana/sum(ICU_Indiana))
+hospitalDeaths_Indiana <- 1018
+
+# Age stratified deaths
+# https://www.in.gov/mph/
+deaths_table_Indiana <- read.csv("../data/downloaded_datasets/indiana/indiana_hospital.csv") %>%
+  dplyr::mutate(., date=lubridate::date(date)) %>%
+  dplyr::filter(., date <= "2020-05-14") %>%
+  dplyr::group_by(., agegrp) %>%
+  summarize(., totalDeaths = sum(covid_deaths))
+
+deaths_short_Indiana <- c(sum(deaths_table_Indiana$totalDeaths[2:3]),
+                          sum(deaths_table_Indiana$totalDeaths[4:5]),
+                          sum(deaths_table_Indiana$totalDeaths[6:8]))
+
+# Serology data from:
+# Population Point Prevalence of SARS-CoV-2 Infection Based on a Statewide
+# Random Sample — Indiana, April 25–29, 2020
+# Note, this study reports both the prevalence estimates from
+# taking antibody surve + PCR survey, and the estimates
+# from antibodies alone. For consistency with the rest of
+# the studies, the methodology, and because of apparent
+# inconsistency between PCR prevalence data and death dynamics
+# in Indiana, we use only the antibody survey data
+#age_Indiana_seroprev <- c("12-40", "40-59", "60+")
+#seroprev_Indiana <- c(1.39, 1.08, 0.77)
+#seroprevL_Indiana <- c(0.7, 0.5, 0.3)
+#seroprevH_Indiana <- c(2.2, 1.8, 1.3)
+## adjustment
+#sensitivity <- 1
+#specificity <- 0.996
+#factor <- 1/(sensitivity + specificity - 1)
+#seroprev_Indiana <- (seroprev_Indiana/100 + specificity - 1)*factor*100
+#seroprevL_Indiana <- seroprevL_Indiana*factor
+#seroprevH_Indiana <- seroprevH_Indiana*factor
+## for completeness, see the seroprevalence + PCR reports below
+#seroprev2_Indiana <- c(3.05, 3.14, 1.65)
+#seroprev2L_Indiana <- c(1.9, 1.9, 1.0)
+#seroprev2H_Indiana <- c(4.3, 5.0, 2.4)
+## seroprevalence from Levin, adjusted for test chars + PCR
+seroprev_Indiana <- c(2.7, 2.8, 1.3)
+seroprevL_Indiana <- c(1.5, 1.4, 0.6)
+seroprevH_Indiana <- c(3.9, 4.2, 2.0)
+
+# extrapolate seroprevalence to hospital data bins
+seroprev_Indiana_ext <- c(rep(seroprev_Indiana[1], 3),
+                          rep(seroprev_Indiana[2], 2),
+                          rep(seroprev_Indiana[3], 3))
+seroprevL_Indiana_ext <- c(rep(seroprevL_Indiana[1], 3),
+                          rep(seroprevL_Indiana[2], 2),
+                          rep(seroprevL_Indiana[3], 3))
+seroprevH_Indiana_ext <- c(rep(seroprevH_Indiana[1], 3),
+                          rep(seroprevH_Indiana[2], 2),
+                          rep(seroprevH_Indiana[3], 3))
+
+# Indiana population
+# from https://censusreporter.org/profiles/04000US18-indiana/
+age_Indiana_pop <- c("0-9", "10-19", "20-29", "30-39", "40-49",
+                     "50-59", "60-69", "70-79", "80+")
+population_prop_Indiana <- c(0.12, 0.14, 0.14, 0.13, 0.12, 0.13,
+                             0.12, 0.07, 0.04)
+totalPopIndiana <- 6732219
+population_Indiana <- round(population_prop_Indiana*totalPopIndiana)
+
+# change first 2 bins to fit dashboard age strata
+population_Indiana[1] <- round(population_Indiana[1]/2)
+population_Indiana[2] <- population_Indiana[2] + population_Indiana[1]
+
+population_Indiana2 <- c(sum(population_Indiana[3:4]),
+                         sum(population_Indiana[5:6]),
+                         sum(population_Indiana[7:9]))
+
+Indiana_hosp <- data.frame(Age=age_Indiana_dashboard[-1],
+                  Population=population_Indiana[-1],
+                  Prevalence=seroprev_Indiana_ext,
+                  PrevalenceL=seroprevL_Indiana_ext,
+                  PrevalenceH=seroprevH_Indiana_ext,
+                  Severe=Hospitalized_Indiana_dash[-1],
+                  Critical=NA,
+                  Deaths=deaths_table_Indiana$totalDeaths,
+                  Type="Seroprevalence",
+                  Location="Indiana",
+                  EndPointOutcome="2020-05-14",
+                  EndPointCases="2020-04-29")
+
+Indiana_ICU <- data.frame(Age=age_Indiana,
+                  Population=population_Indiana2,
+                  Prevalence=seroprev_Indiana,
+                  PrevalenceL=seroprevL_Indiana,
+                  PrevalenceH=seroprevH_Indiana,
+                  Severe=NA,
+                  Critical=ICU_Indiana,
+                  Deaths=deaths_short_Indiana,
+                  Type="Seroprevalence",
+                  Location="Indiana",
+                  EndPointOutcome="2020-05-14",
+                  EndPointCases="2020-04-29")
+
+Indiana <- rbind(Indiana_hosp, Indiana_ICU)
+
+
+######################
+# Connecticut, USA
+######################
+# Hospital data from:
+# SARS-CoV-2 Infection Hospitalization Rate and Infection Fatality Rate Among the Non-Congregate Population in Connecticut
+age_Connecticut_hosp <- c("18-29", "30-44", "45-54", "55-64", "65+")
+Hospitalized_Connecticut <- c(288, 855, 1013, 1660, 3981)
+non_cong_deaths_Connecticut <- c(5, 34, 59, 174, 807)
+
+population_Connecticut <- c(564738, 649874, 496628, 513656, 612981)
+
+# Death data:
+# https://data.ct.gov/Health-and-Human-Services/COVID-19-Cases-and-Deaths-by-Age-Group/ypz6-8qyf/data
+deaths_Connecticut <- read.csv("../data/downloaded_datasets/connecticut/COVID-19_Cases_and_Deaths_by_Age_Group.csv") %>%
+  dplyr::filter(., DateUpdated=="06/01/2020")
+deaths_Connecticut <- deaths_Connecticut$Total.deaths
+deaths_Connecticut <- c(deaths_Connecticut[3],
+                        deaths_Connecticut[4]+floor(deaths_Connecticut[5]/2),
+                        ceiling(deaths_Connecticut[5]/2)+floor(deaths_Connecticut[6]/2),
+                        ceiling(deaths_Connecticut[6]/2)+floor(deaths_Connecticut[7]/2),
+                        ceiling(deaths_Connecticut[7]/2)+sum(deaths_Connecticut[8:9]))
+
+# Seroprevalence data from:
+# Seroprevalence of SARS-CoV-2-Specific IgG Antibodies Among Adults Living in Connecticut: Post-Infection Prevalence (PIP) Study
+age_Connecticut_seroprev <- c("18-29", "30-44", "45-54", "55-64", "65+")
+n_sero_Connecticut <- c(41, 90, 113, 134, 187)
+positive_Connecticut <- c(2, 4, 9, 6, 2)
+
+seroprev_Connecticut <- positive_Connecticut/n_sero_Connecticut*100
+seroprevL_Connecticut <- NULL
+seroprevH_Connecticut <- NULL
+for (p in c(1:length(seroprev_Connecticut))) {
+  tt <- prop.test(seroprev_Connecticut[p]/100, n_sero_Connecticut[p],
+                   conf.level=0.95)
+  seroprevL_Connecticut[p] <- tt$conf.int[1]*100
+  seroprevH_Connecticut[p] <- tt$conf.int[2]*100
+}
+
+sensitivity <- 0.9
+specificity <- 1 
+factor <- 1/(sensitivity + specificity - 1)
+seroprev_Connecticut <- (seroprev_Connecticut/100 + specificity - 1)*factor*100
+seroprevL_Connecticut <- seroprevL_Connecticut*factor
+seroprevH_Connecticut <- seroprevH_Connecticut*factor
+
+Connecticut <- data.frame(Age=age_Connecticut_seroprev,
+                  Population=population_Connecticut,
+                  Prevalence=seroprev_Connecticut,
+                  PrevalenceL=seroprevL_Connecticut,
+                  PrevalenceH=seroprevH_Connecticut,
+                  Severe=Hospitalized_Connecticut,
+                  Critical=NA,
+                  Deaths=deaths_Connecticut,
+                  Type="Seroprevalence",
+                  Location="Connecticut",
+                  EndPointOutcome="2020-06-01",
+                  EndPointCases="2020-07-29")
+
+
+######################
+# Denmark
+######################
+# All data from Espenhain et al.
+# Prevalence of SARS‑CoV‑2 antibodies in Denmark: nationwide,
+# population‑based seroepidemiological study
+# also useful:
+# https://experience.arcgis.com/experience/aa41b29149f24e20a4007a0c4e13db1d
+
+age_Denmark_seroprev <- c("12-17", "18-39", "40-64", "65+")
+
+hospitalized_Denmark <- c(58, 642, 2033, 3164)
+deaths_Denmark <- c(0, 3, 56, 1022)
+
+population_Denmark <- c(400000, 1584906, 1916667, 1173913)
+
+seroprev_Denmark <- c(6.5, 5.3, 3.6, 2.3)
+seroprevL_Denmark <- c(3.8, 3.8, 2.5, 1.0)
+seroprevH_Denmark <- c(10, 6.8, 4.7, 4.0)
+
+Denmark <- data.frame(Age=age_Denmark_seroprev,
+                  Population=population_Denmark,
+                  Prevalence=seroprev_Denmark,
+                  PrevalenceL=seroprevL_Denmark,
+                  PrevalenceH=seroprevH_Denmark,
+                  Severe=hospitalized_Denmark,
+                  Critical=NA,
+                  Deaths=deaths_Denmark,
+                  Type="Seroprevalence",
+                  Location="Denmark",
+                  EndPointOutcome="2020-12-12",
+                  EndPointCases="2020-12-02")
+
 ####################################
 # Put countries together and export
 ####################################
 countriesDf <- dplyr::bind_rows(Iceland, NewZealand, Korea, Spain, Ireland,
   Sweden, Ile_de_France, England, Netherlands, Atlanta, NYC, Ontario,
-  Geneva, Belgium) %>%
+  Geneva, Belgium, Indiana, Connecticut, Denmark) %>%
   dplyr::mutate(., meanAge=mid_bin_age(Age))
 
 write.csv(countriesDf, "../data/collected_data/locations_serology_data.csv",
           row.names=FALSE)
-
 

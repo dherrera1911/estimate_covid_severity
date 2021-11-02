@@ -9,6 +9,7 @@ library(viridis)
 library(RColorBrewer)
 library(ggthemes)
 library(lemon)
+library(cowplot)
 source("./functions_auxiliary.R")
 
 regLineSize=1
@@ -83,13 +84,6 @@ outcomeFitDf$Outcome_type <- factor(outcomeFitDf$Outcome_type,
                                        levels=outcome, labels=outcome2)
 
 
-# https://www.sciencemag.org/news/2021/06/israel-reports-link-between-rare-cases-heart-inflammation-and-covid-19-vaccination
-myocarditisProp <- c(1/6000, 1/3000)
-ageRangeMyo <- c(16, 24)
-ageMeanMyo <- mean(ageRangeMyo)
-myoTextX <- 68
-myoTextY <- 0.005
-
 serologyPlot <- longCountryData %>%
   ggplot(., aes(x=meanAge, y=Outcomes*100/(Population*Prevalence/100),
                 color=Type, group=as.character(Location), facet=Outcome_type)) +
@@ -103,14 +97,6 @@ serologyPlot <- longCountryData %>%
               aes(x=meanAge, ymin=outcome_L*100, ymax=outcome_H*100),
               alpha=ribbonAlpha, colour=NA, show.legend=FALSE,
               inherit.aes=FALSE) +
-#  geom_segment(aes(x=ageMeanMyo, xend=ageMeanMyo, y=myocarditisProp[1]*100,
-#                   yend=myocarditisProp[2]*100), color="black", size=1,
-#               inherit.aes=FALSE) +
-#  geom_segment(aes(x=ageMeanMyo+2, xend=myoTextX-20, y=100/4000, yend=myoTextY*1.5),
-#               arrow=arrow(length=unit(0.2, "cm")), color="black",
-#               inherit.aes=FALSE, size=0.3) +
-#  geom_text(aes(x=myoTextX, y=myoTextY), label="Israel vaccine\nmyocarditis rate", color="black",
-#            inherit.aes=FALSE, size=3.1) +
   scale_color_brewer(palette="Dark2") +
   theme_bw() +
   scale_y_continuous(trans='log10', labels=scaleFun,
@@ -129,6 +115,63 @@ serologyPlot <- longCountryData %>%
   ylab("% Infected with outcome")
 
 ggsave(serologyPlotName, serologyPlot, width=18, height=9.5, units="cm")
+
+
+fitPlotLin <- outcomeFitDf %>%
+#  dplyr::mutate(., old = meanAge>=40) %>%
+  ggplot(., aes(x=meanAge, y=outcomeProp*100,
+                color=Outcome_type, fill=Outcome_type)) +
+  geom_line(size=regLineSize*0.8) +
+  geom_ribbon(aes(x=meanAge, ymin=outcome_L*100, ymax=outcome_H*100),
+              alpha=ribbonAlpha, color=NA, show.legend=FALSE) +
+#  facet_wrap(.~old, scales="free") +
+  theme_bw() +
+  scale_x_continuous(expand=c(0,0)) +
+  theme(strip.background=element_rect(fill="white", color="white"),
+        strip.text=element_text(face="bold"),
+        legend.position="top",
+        panel.border=element_blank(),
+        #panel.grid.major=element_blank(),
+        panel.grid.minor=element_blank(),
+        axis.line=element_line(colour = "black"),
+        axis.line.x=element_line(size=0.5, linetype="solid"),
+        axis.line.y=element_line(size=0.5, linetype="solid"),
+        legend.title=element_blank()) +
+  xlab("Age") +
+  ylab("% Infected with outcome")
+
+fitPlotExp <- outcomeFitDf %>%
+  ggplot(., aes(x=meanAge, y=outcomeProp*100,
+                color=Outcome_type, fill=Outcome_type)) +
+  geom_line(size=regLineSize*0.8) +
+  geom_ribbon(aes(x=meanAge, ymin=outcome_L*100, ymax=outcome_H*100),
+              alpha=ribbonAlpha, color=NA, show.legend=FALSE) +
+  theme_bw() +
+  scale_y_continuous(trans='log10', labels=scaleFun,
+                     breaks=10^c(-3, -2, -1, 0, 1, 2)) +
+  theme(strip.background=element_rect(fill="white", color="white"),
+        strip.text=element_text(face="bold"),
+        legend.position="top",
+        panel.border=element_blank(),
+        #panel.grid.major=element_blank(),
+        panel.grid.minor=element_blank(),
+        axis.line=element_line(colour = "black"),
+        axis.line.x=element_line(size=0.5, linetype="solid"),
+        axis.line.y=element_line(size=0.5, linetype="solid"),
+        legend.title=element_blank()) +
+  xlab("Age") +
+  ylab("% Infected with outcome")
+
+
+fitsPlot <- ggpubr::ggarrange(plotlist=list(fitPlotExp, fitPlotLinSplit),
+                  ncol=2, common.legend=TRUE)
+
+figure1 <- ggpubr::ggarrange(plotlist=list(serologyPlot, fitsPlot),
+                           nrow=2, labels=c("(A)", "(B)"),
+                           heights=c(1.1, 0.9))
+
+ggsave("../data/plots/figure1_new.png", figure1,
+       width=18, height=17, units="cm")
 
 
 #posteriorTraces <- NULL
@@ -193,13 +236,13 @@ vaccineRatio <- data.frame()
 for (no in c(1:length(outcome))) {
   oStr <- outcome[no]
   agesComparison <- proportion_samples(model=serologyModels$model[[oStr]],
-           ageVec=c(20, 20),
+           ageVec=c(23),
            meanAge=serologyModels$meanAge,
            sdAge=serologyModels$sdAge)
   ratiosTemp <- agesComparison$samples %>%
     dplyr::select(., -age) %>%
     dplyr::filter(., ageInd==1) %>%
-    dplyr::mutate(., propRatio=proportion/(1/4000))
+    dplyr::mutate(., propRatio=proportion/(1/80000))
   tempDf <- data.frame(meanRatio=mean(ratiosTemp$propRatio),
                        lowerRatio=quantile(ratiosTemp$propRatio, p=0.025),
                        upperRatio=quantile(ratiosTemp$propRatio, p=0.975))
@@ -321,6 +364,7 @@ write.csv(tidyFitDf,
           row.names=FALSE)
 
 
+
 ############################
 ############################
 ###
@@ -389,4 +433,19 @@ figure2 <- ggarrange(plotlist=list(mortalityPlot, literaturePropPlot),
 
 ggsave("../data/plots/figure2.png", figure2, width=20, height=10, units="cm")
 
+
+# Get param summary statistics
+outcome2 <- c("Hospitalized", "ICU")
+mainParams <- c("ageSlope", "ageSlopeSigma", "intercept", "interceptSigma")
+modelSummary <- NULL
+for (no in c(1:length(outcome2))) {
+  oStr <- outcome2[no]
+  modelParams <- extract_model_params_norm(mortalityModels$model[[oStr]],
+    xCenter=mortalityModels$meanAge[[oStr]], xSd=mortalityModels$sdAge[[oStr]])
+  modelParams$outcome <- oStr
+  modelSummary <- rbind(modelSummary, modelParams)
+}
+
+allPars <- summary(mortalityModels$model[["ICU"]], pars=mainParams)[["summary"]]
+allPars <- signif(allPars[, c("mean", "2.5%", "97.5%")], 3)
 

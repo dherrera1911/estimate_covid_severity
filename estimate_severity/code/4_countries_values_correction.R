@@ -276,6 +276,71 @@ geneva$ooiDeaths_source <- NA
 
 
 ############
+# Indiana
+############
+indiana_hosp <- dplyr::filter(countryData, Location=="Indiana" & !is.na(Severe))
+indiana_ICU <- dplyr::filter(countryData, Location=="Indiana" & !is.na(Critical))
+
+# Hospital
+mortHospIndiana <- proportion_samples(model=mortalityModels$model$Hospitalized,
+                               ageVec=indiana_hosp$meanAge,
+                               meanAge=mortalityModels$meanAge$Hospitalized,
+                               sdAge=mortalityModels$sdAge$Hospitalized)
+oohIndiana <- ooh_deaths_estimation(mortalitySamples=mortHospIndiana,
+                                  hospitalized=indiana_hosp$Severe,
+                                  deaths=indiana_hosp$Deaths)
+newSevereIndiana <- indiana_hosp$Severe + oohIndiana$mean
+
+#ICU
+mortICUIndiana <- proportion_samples(model=mortalityModels$model$ICU,
+                               ageVec=indiana_ICU$meanAge,
+                               meanAge=mortalityModels$meanAge$ICU,
+                               sdAge=mortalityModels$sdAge$ICU)
+
+ooiIndiana <- ooh_deaths_estimation(mortalitySamples=mortICUIndiana,
+                                  hospitalized=indiana_ICU$Critical,
+                                  deaths=indiana_ICU$Deaths)
+newCritIndiana <- indiana_ICU$Critical + ooiIndiana$mean
+
+indiana_hosp$Severe <- newSevereIndiana
+indiana_hosp$oohDeaths <- oohIndiana$mean
+indiana_hosp$ooiDeaths <- NA
+indiana_hosp$oohDeaths_source <- "Estimated"
+indiana_hosp$ooiDeaths_source <- NA
+
+indiana_ICU$Critical <- newCritIndiana
+indiana_ICU$oohDeaths <- NA
+indiana_ICU$ooiDeaths <- ooiIndiana$mean
+indiana_ICU$oohDeaths_source <- NA
+indiana_ICU$ooiDeaths_source <- "Estimated"
+
+indiana <- rbind(indiana_hosp, indiana_ICU)
+
+
+############
+# Denmark
+############
+# standard processing
+denmark <- filter(countryData, Location=="Denmark")
+
+mortHospDenmark <- proportion_samples(model=mortalityModels$model$Hospitalized,
+                               ageVec=denmark$meanAge,
+                               meanAge=mortalityModels$meanAge$Hospitalized,
+                               sdAge=mortalityModels$sdAge$Hospitalized)
+
+oohDenmark <- ooh_deaths_estimation(mortalitySamples=mortHospDenmark,
+                                  hospitalized=denmark$Severe,
+                                  deaths=denmark$Deaths)
+
+newSevereDenmark <- denmark$Severe + oohDenmark$mean
+
+denmark$Severe <- newSevereDenmark
+denmark$oohDeaths <- oohDenmark$mean
+denmark$ooiDeaths <- NA
+denmark$oohDeaths_source <- "Estimated"
+denmark$ooiDeaths_source <- NA
+
+############
 # Belgium 
 ############
 # Severe cases information is already corrected with real data
@@ -302,6 +367,30 @@ belgium$oohDeaths <- oohDeaths_Belgium
 belgium$ooiDeaths <- ooiBelgium$mean
 belgium$oohDeaths_source <- "Data"
 belgium$ooiDeaths_source <- "Estimated"
+
+
+############
+# Connecticut
+############
+# standard processing
+connecticut <- filter(countryData, Location=="Connecticut")
+
+mortHospConnecticut <- proportion_samples(model=mortalityModels$model$Hospitalized,
+                               ageVec=connecticut$meanAge,
+                               meanAge=mortalityModels$meanAge$Hospitalized,
+                               sdAge=mortalityModels$sdAge$Hospitalized)
+
+oohConnecticut <- ooh_deaths_estimation(mortalitySamples=mortHospConnecticut,
+                                  hospitalized=connecticut$Severe,
+                                  deaths=connecticut$Deaths)
+
+newSevereConnecticut <- connecticut$Severe + oohConnecticut$mean
+
+connecticut$Severe <- newSevereConnecticut
+connecticut$oohDeaths <- oohConnecticut$mean
+connecticut$ooiDeaths <- NA
+connecticut$oohDeaths_source <- "Estimated"
+connecticut$ooiDeaths_source <- NA
 
 
 ############
@@ -486,7 +575,8 @@ england <- rbind(england1, england2, england3)
 ##############
 locationsList <- list(iceland, newZealand, southKorea, spain,
                       ireland, sweden, france, england, netherlands,
-                      atlanta, nyc, ontario, geneva, belgium)
+                      atlanta, nyc, ontario, geneva, belgium,
+                      indiana, denmark, connecticut)
 
 correctedDf <- data.frame()
 for (l in c(1:length(locationsList))) {

@@ -74,6 +74,10 @@ The fitted models are saved in
 
 Obtain the dynamics of death data for some controls.
 
+### 8_children_point_estimate.R
+
+Do the point estimate of children severity discussed
+in the supplementary.
 
 ### plot_main_figures.R
 

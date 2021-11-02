@@ -126,13 +126,20 @@ proportion_samples <- function(model, ageVec,
   fitSampleMat <- matrix(nrow=length(ageVec), ncol=0)
   for (n in c(1:length(posterior[[1]]))) {
     intSample <- posterior[[interceptName]][n]
-    slopeSample <- posterior[[slopeName]][n]
+    if (is.na(slopeName)) {
+      slopeSample <- 0
+    } else {
+      slopeSample <- posterior[[slopeName]][n]
+    }
     lin <- intSample + slopeSample * stdAgeVec
     fitProp <- exp(lin)/(1+exp(lin))
     fitSampleMat <- cbind(fitSampleMat, as.matrix(fitProp))
   }
   meanProp <- rowMeans(fitSampleMat) 
   ciProp <- matrixStats::rowQuantiles(fitSampleMat, probs=c(0.025, 0.975))
+  if (!is.matrix(ciProp)) { # if only one param, this is needed
+    ciProp <- t(as.matrix(ciProp))
+  }
   sampleVec <- sort(rep(c(1:ncol(fitSampleMat)), nrow(fitSampleMat)))
   ageVecLong <- rep(ageVec, ncol(fitSampleMat))
   ageIndVec <- rep(c(1:length(ageVec)), ncol(fitSampleMat))
@@ -147,41 +154,41 @@ proportion_samples <- function(model, ageVec,
   
 
 
-# Get posterior samples of bayesian fit and put into matrix
-proportion_samples <- function(model, ageVec,
-                               slopeName="ageSlope",
-                               interceptName="intercept",
-                               meanAge=0,
-                               sdAge=1,
-                               link="logit") {
-  stdAgeVec <- (ageVec-meanAge)/sdAge
-  posterior <- rstan::extract(model)
-  fitSampleMat <- matrix(nrow=length(ageVec), ncol=0)
-  for (n in c(1:length(posterior[[1]]))) {
-    intSample <- posterior[[interceptName]][n]
-    slopeSample <- posterior[[slopeName]][n]
-    lin <- intSample + slopeSample * stdAgeVec
-    if (link=="logit") {
-      fitProp <- exp(lin)/(1+exp(lin))
-    } else {
-      fitProp <- VGAM::probitlink(theta=lin, inverse=TRUE)
-    }
-
-    fitSampleMat <- cbind(fitSampleMat, as.matrix(fitProp))
-  }
-  meanProp <- rowMeans(fitSampleMat) 
-  ciProp <- matrixStats::rowQuantiles(fitSampleMat, probs=c(0.025, 0.975))
-  sampleVec <- sort(rep(c(1:ncol(fitSampleMat)), nrow(fitSampleMat)))
-  ageVecLong <- rep(ageVec, ncol(fitSampleMat))
-  ageIndVec <- rep(c(1:length(ageVec)), ncol(fitSampleMat))
-
-  samplesDf <- data.frame(sample=sampleVec,
-                          proportion=as.vector(fitSampleMat),
-                          age=ageVecLong, ageInd=ageIndVec)
-  sampleList <- list(samples=samplesDf, prop_mean=meanProp,
-                     prop_L=ciProp[,1], prop_H=ciProp[,2])
-  return(sampleList)
-}
+## Get posterior samples of bayesian fit and put into matrix
+#proportion_samples <- function(model, ageVec,
+#                               slopeName="ageSlope",
+#                               interceptName="intercept",
+#                               meanAge=0,
+#                               sdAge=1,
+#                               link="logit") {
+#  stdAgeVec <- (ageVec-meanAge)/sdAge
+#  posterior <- rstan::extract(model)
+#  fitSampleMat <- matrix(nrow=length(ageVec), ncol=0)
+#  for (n in c(1:length(posterior[[1]]))) {
+#    intSample <- posterior[[interceptName]][n]
+#    slopeSample <- posterior[[slopeName]][n]
+#    lin <- intSample + slopeSample * stdAgeVec
+#    if (link=="logit") {
+#      fitProp <- exp(lin)/(1+exp(lin))
+#    } else {
+#      fitProp <- VGAM::probitlink(theta=lin, inverse=TRUE)
+#    }
+#
+#    fitSampleMat <- cbind(fitSampleMat, as.matrix(fitProp))
+#  }
+#  meanProp <- rowMeans(fitSampleMat) 
+#  ciProp <- matrixStats::rowQuantiles(fitSampleMat, probs=c(0.025, 0.975))
+#  sampleVec <- sort(rep(c(1:ncol(fitSampleMat)), nrow(fitSampleMat)))
+#  ageVecLong <- rep(ageVec, ncol(fitSampleMat))
+#  ageIndVec <- rep(c(1:length(ageVec)), ncol(fitSampleMat))
+#
+#  samplesDf <- data.frame(sample=sampleVec,
+#                          proportion=as.vector(fitSampleMat),
+#                          age=ageVecLong, ageInd=ageIndVec)
+#  sampleList <- list(samples=samplesDf, prop_mean=meanProp,
+#                     prop_L=ciProp[,1], prop_H=ciProp[,2])
+#  return(sampleList)
+#}
 
 
 # estimate the number of out of hospital (or ICU) deaths

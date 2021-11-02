@@ -40,9 +40,10 @@ initial_values <- function(nChains, paramListName, lowerUni, upperUni) {
   return(initList)
 }
 nChains <- 4
+nCores <- 2
 paramListName <- c("ageSlope", "intercept", "interceptSigma", "ageSlopeSigma")
-lowerUni <- c(1, -3, 0, 0)
-upperUni <- c(2, -1, 0.5, 0.5)
+lowerUni <- c(1, -4, 0, 0)
+upperUni <- c(2, -2, 0.5, 0.5)
 
 
 #############################
@@ -53,7 +54,7 @@ upperUni <- c(2, -1, 0.5, 0.5)
 hospMort <- dplyr::filter(mortalityData, Type=="Hospitalized") %>%
   dplyr::mutate(., locationNum=as.integer(factor(Location)))
 
-meanHospAge <- mean(hospMort$meanAge)
+meanHospAge <- 0 # mean(hospMort$meanAge)
 sdHospAge <- sd(hospMort$meanAge)
 hospMort$stdAge <- (hospMort$meanAge-meanHospAge)/sdHospAge
 
@@ -71,7 +72,7 @@ hospMortList <- list(N=nrow(hospMort),
 # Compile and run model
 hospMortFit <- rstan::sampling(outcome_reg, data=hospMortList,
                                chains=4, iter=5000, refresh=0,
-                               cores=4, init=initList,
+                               cores=nCores, init=initList,
                                control=list(adapt_delta=0.999,
                                             max_treedepth=15))
 
@@ -83,7 +84,7 @@ hospMortFit <- rstan::sampling(outcome_reg, data=hospMortList,
 icuMort <- dplyr::filter(mortalityData, Type=="ICU") %>%
   dplyr::mutate(., locationNum=as.integer(factor(Study)))
 
-meanICUAge <- mean(icuMort$meanAge)
+meanICUAge <- 0 # mean(icuMort$meanAge)
 sdICUAge <- sd(icuMort$meanAge)
 icuMort$stdAge <- (icuMort$meanAge-meanICUAge)/sdICUAge
 

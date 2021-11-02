@@ -75,7 +75,7 @@ ifrBrazeau <- data.frame(Age=ageBrazeau, Proportion=ifrBrazeauVec,
 ageLevin <- c("0-9", "10-19", "20-29", "30-39", "40-49",
             "50-59", "60-69", "70-79", "80+")
 ifrLevinVec <- c(0.001, 0.003, 0.011, 0.035, 0.116, 0.384, 1.27, 4.19, 15.61)
-ifrLevinLow <- c(0.00007, 0.002, 0.009, 0.030, 0.101, 0.335, 1.09, 3.45, 12.2)
+ifrLevinLow <- c(0.0007, 0.002, 0.009, 0.030, 0.101, 0.335, 1.09, 3.45, 12.2)
 ifrLevinHigh <- c(0.0013, 0.004, 0.013, 0.042, 0.134, 0.441, 1.49, 5.10, 20.0)
 ifrLevin <- data.frame(Age=ageLevin, Proportion=ifrLevinVec,
                        Proportion_L=ifrLevinLow,
@@ -115,34 +115,60 @@ ihrSalje <- data.frame(Age=ageSalje, Proportion=severeSalje,
                       Proportion_H=severeSaljeH,
                       Study="Salje", Type="IHR")
 
-# critical = severeSalje * severe2ICU/100
-# criticalL = severeSaljeL * severe2ICU/100
-# criticalH = severeSaljeH * severe2ICU/100
-# 
-# icrSalje <- data.frame(Age=agesSalje, Proportion=severeSaljeVec,
-#                       Proportion_L=severeSaljeL,
-#                       Proportion_H=severeSaljeH,
-#                       Study="Salje", Type="IHR")
+# Menachemi et al
+ageMenachemi <- c("18-39", "40-59", "60+")
+severeMenachemi <- c(0.4, 2.3, 9.2)
+severeMenachemiL <- c(0.3, 1.5, 6.4)
+severeMenachemiH <- c(0.6, 3.8, 14.9)
+criticalMenachemi <- c(0.05, 0.45, 2.6)
+criticalMenachemiL <- c(0.04, 0.28, 1.8)
+criticalMenachemiH <- c(0.09, 0.74, 4.2)
 
+ihrMenachemi <- data.frame(Age=ageMenachemi, Proportion=severeMenachemi,
+                      Proportion_L=severeMenachemiL,
+                      Proportion_H=severeMenachemiH,
+                      Study="Menachemi", Type="IHR")
 
-# For 80+ substitute for death prop, since they don't seem to go into ICU much
-#dfSalje$critical[nrow(dfSalje)] <- tail(severeSaljeVec,1) * tail(severe2Death,1)/100
-#dfSalje$criticalL[nrow(dfSalje)] <- tail(severeSaljeL,1) * tail(severe2Death,1)/100
-#dfSalje$criticalH[nrow(dfSalje)] <- tail(severeSaljeH,1) * tail(severe2Death,1)/100
-#
-#veritySevereDf <- dplyr::mutate(dfVerity, study="Verity") %>%
-#  dplyr::select(., age, severe, severeL, severeH, study)
-#saljeSevereDf <- dplyr::mutate(dfSalje, study = "Salje") %>%
-#  dplyr::select(., age, severe, severeL, severeH, study)
-#
-#literatureSevereDf <- rbind(veritySevereDf, saljeSevereDf)
-#write.csv(literatureSevereDf, "../data/0_percentage_severe_literature.csv",
-#          row.names=FALSE)
-#
+# Espenhain et al
+ageEspenhain <- c("12-17", "18-39", "40-64", "65+")
+severeEspenhain <- c(0.22, 0.76, 3.0, 12)
+severeEspenhainL <- c(NA, NA, NA, NA)
+severeEspenhainH <- c(NA, NA, NA, NA)
 
+ihrEspenhain <- data.frame(Age=ageEspenhain, Proportion=severeEspenhain,
+                      Proportion_L=severeEspenhainL,
+                      Proportion_H=severeEspenhainH,
+                      Study="Espenhain", Type="IHR")
+
+# Mahajan et al
+ageMahajan <- c("18-29", "30-44", "45-54", "55-64", "65+")
+severeMahajan <- c(0.8, 2.68, 3.09, 12.43, 79.89)
+severeMahajanL <- c(0.36, 1.38, 1.81, 6.46, 31.96)
+severeMahajanH <- c(NA, 43.85, 10.74, NA, NA)
+
+ihrMahajan <- data.frame(Age=ageMahajan, Proportion=severeMahajan,
+                      Proportion_L=severeMahajanL,
+                      Proportion_H=severeMahajanH,
+                      Study="Mahajan", Type="IHR")
+
+# Seedat et al
+ageSeedat <- c("0-9", "10-19", "20-29", "30-39", "40-49", "50-59",
+               "60-69", "70-79", "80+")
+severeSeedat <- c(0.806, 0.715, 0.719, 1.007, 1.600, 26.35,
+                  6.46, 9.984, 3.63)
+severeSeedatL <- c(0.785, 0.696, 0.702, 0.988, 1.565, 2.569, 5.882,
+  9.723, 3.576)
+severeSeedatH <- c(0.820, 0.727, 0.728, 1.018, 1.617, 2.668,
+                   6.153, 10.165, 3.737)
+
+ihrSeedat <- data.frame(Age=ageSeedat, Proportion=severeSeedat,
+                      Proportion_L=severeSeedatL,
+                      Proportion_H=severeSeedatH,
+                      Study="Seedat", Type="IHR")
 
 literatureDf <- rbind(ifrDriscoll, ifrBrazeau, ifrLevin, ihrVerity,
-                      ihrSalje) %>%
+                      ihrSalje, ihrMenachemi, ihrMahajan, ihrEspenhain,
+                      ihrSeedat) %>%
   dplyr::mutate(., meanAge=mid_bin_age(Age))
 
 write.csv(literatureDf, "../data/collected_data/literature_rates_estimations.csv",

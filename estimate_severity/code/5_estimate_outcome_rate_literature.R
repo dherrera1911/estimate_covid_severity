@@ -2,12 +2,12 @@
 ###########################################
 #
 #
-#This script uses the IFR estimates collected in
-#script 1_literature_values_covid.R, together with
-#the models fitted in script 3_estimate_hospital_mortality.R
-#to perform the ratio-of-ratios method described in
-#the manuscript. This generates estimates of ISR and ICR
-#for each IFR study
+# This script uses the IFR estimates collected in
+# script 1_literature_values_covid.R, together with
+# the models fitted in script 3_estimate_hospital_mortality.R
+# to perform the ratio-of-ratios method described in
+# the manuscript. This generates estimates of ISR and ICR
+# for each IFR study
 #
 #
 ###########################################
@@ -65,70 +65,45 @@ mortalityPosterior <- list()
 outputDf <- dplyr::select(literatureIFR, Age, Proportion, Proportion_L,
                           Proportion_H, Study, Type, meanAge)
 
-for (no in c(1:length(outcomes))) {
+for (no in c(1:length(outcomes1))) {
   print(paste("Outcome:", no))
-  oStr <- outcomes[no]
+  oStr <- outcomes1[no]
   lowValsList <- list()
   highValsList <- list()
   outcomeFit <- mortalityFit$model[[oStr]]
   meanAge <- mortalityFit$meanAge[[oStr]]
   sdAge <- mortalityFit$sdAge[[oStr]]
-  mortalityPosterior[[oStr]] <- proportion_samples(model=outcomeFit,
-                                                   ageVec=ageVec,
+  for (r in c(1:nrow(literatureIFR))) {
+    print(paste("Row:", r))
+    rowAge <- literatureIFR$meanAge[r]
+    mortalityPosterior <- proportion_samples(model=outcomeFit,
+                                                   ageVec=rowAge,
                                                    meanAge=meanAge,
                                                    sdAge=sdAge)
-  # sample the IFR vec many times, to do the ratio of ratios
-  outcomeProp <- NULL
-  propMeanMat <- NULL
-  for (s in c(1:ifrSamples)) {
-    print(paste("IFR sample:", s))
-    sampleIFR <- NULL
-    for (r in c(1:nrow(literatureIFR))) {
-      if (!is.na(literatureIFR$betaShape1[r])) {
-        sampleIFR[r] <- rbeta(1, shape1=literatureIFR$betaShape1[r],
-                               shape2=literatureIFR$betaShape2[r])
-      } else {
-        sampleIFR[r] <- literatureIFR$Proportion[r]
-      }
+    # sample the IFR, to do the ratio of ratios
+    if (!is.na(literatureIFR$betaShape1[r])){
+      sampleIFR <- rbeta(1, shape1=literatureIFR$betaShape1[r],
+                            shape2=literatureIFR$betaShape2[r],
+                            n=length(mortalityPosterior$samples$sample))
+      ratioOfRatios <- sampleIFR/mortalityPosterior$samples$proportion
+      meanProp <- mean(ratioOfRatios)
+      ciProp <- quantile(ratioOfRatios, probs=c(0.025, 0.975))
+    } else {
+      sampleIFR <- rep(literatureIFR$Proportion[r],
+                       length(mortalityPosterior$samples$sample))
+      ratioOfRatios <- sampleIFR/mortalityPosterior$samples$proportion
+      meanProp <- mean(ratioOfRatios)
+      ciProp <- rep(NA, 2)
     }
-    ifrVec <- rep(sampleIFR, max(mortalityPosterior[[oStr]]$sample))
-    tempOutcomeProp <- ifrVec/mortalityPosterior[[oStr]]$samples$proportion
-    tempOutcomeProp <- pmin(tempOutcomeProp, 100)
-    # Find mean and quantiles of samples
-    outcomePropMat <- matrix(tempOutcomeProp, nrow=nrow(literatureIFR),
-              ncol=max(mortalityPosterior[[oStr]]$sample))
-    ind1 <- round(dim(outcomePropMat)[2]*0.025)
-    ind2 <- round(dim(outcomePropMat)[2]*0.975)
-    # collect the extreme values to compute CI. due to memory insufficiency
-    for (r in c(1:nrow(literatureIFR))) {
-      first025 <- sort(outcomePropMat[r,])[1:ind1]
-      last025 <- sort(outcomePropMat[r,])[ind2:ncol(outcomePropMat)]
-      if (s==1) {
-        lowValsList[[r]] <- first025
-        highValsList[[r]] <- last025
-      } else {
-        lowValsList[[r]] <- c(lowValsList[[r]], first025)
-        highValsList[[r]] <- c(highValsList[[r]], last025)
-      }
-    }
-    propMeanMat <- cbind(propMeanMat, rowMeans(outcomePropMat))
+    tempDf <- data.frame(Age=literatureIFR$Age[r],
+                        Proportion=meanProp,
+                        Proportion_L=ciProp[1],
+                        Proportion_H=ciProp[2],
+                        Study=literatureIFR$Study[r],
+                        Type=outcomes2[no],
+                        meanAge=literatureIFR$meanAge[r])
+    outputDf <- rbind(outputDf, tempDf)
   }
-  meanProp <- rowMeans(propMeanMat)
-  lowerProp <- NULL
-  upperProp <- NULL
-  for (r in c(1:nrow(literatureIFR))) {
-    lowerProp[r] <- max(lowValsList[[r]])
-    upperProp[r] <- min(highValsList[[r]])
-  }
-  # Put into data frame
-  tempDf <- data.frame(Age=literatureIFR$Age,
-                      Proportion=meanProp,
-                      Proportion_L=lowerProp,
-                      Proportion_H=upperProp,
-                      Study=literatureIFR$Study,
-                      Type=outcomes2[no],
-                      meanAge=ageVec)
-  outputDf <- rbind(outputDf, tempDf)
 }
 
 outputDf <- dplyr::mutate(outputDf, Proportion=Proportion*100,

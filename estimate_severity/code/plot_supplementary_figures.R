@@ -20,6 +20,13 @@ sampleLineSize=0.1
 sampleLineAlpha=0.1
 dataAlpha <- 0.5
 
+# predefine some variables
+outcome <- c("Severe", "Critical", "Deaths")
+outcome2 <- c("Severe disease", "Critical disease", "Fatal disease")
+labelsType <- c("Representative seroprevalence", "Convenience seroprevalence",
+                "Comprehensive testing")
+
+
 ############################
 ############################
 ###
@@ -51,7 +58,6 @@ serologyModelsCorrected <- readRDS("../data/processed_data/6_serology_fits_corre
 countryDataUncorrected$oohDeaths_source <- countryDataCorrected$oohDeaths_source
 countryDataUncorrected$ooiDeaths_source <- countryDataCorrected$ooiDeaths_source
 
-
 countryData <- dplyr::select(countryDataCorrected,
                              all_of(names(countryDataUncorrected))) %>%
   rbind(., countryDataUncorrected)
@@ -59,12 +65,6 @@ countryData <- dplyr::select(countryDataCorrected,
 serologyModels <- list(Corrected=serologyModelsCorrected,
                     Uncorrected=serologyModelsUncorrected)
 
-
-# predefine some variables
-outcome <- c("Severe", "Critical", "Deaths")
-outcome2 <- c("Severe disease", "Critical disease", "Fatal disease")
-labelsType <- c("Representative seroprevalence", "Convenience seroprevalence",
-                "Comprehensive testing")
 
 # enlongate data
 longCountryData <- tidyr::pivot_longer(data=countryData, 
@@ -499,7 +499,7 @@ for (no in c(1:length(outcome))) {
                           outcome_L=serologyPosterior[[oStr]]$prop_L,
                           outcome_H=serologyPosterior[[oStr]]$prop_H,
                           Outcome_type=oStr,
-                          processing="Without most seroconverted")
+                          processing="Without most seroreverted")
   outcomeFit5Df <- rbind(outcomeFit5Df, tempFitDf)
 }
 outcomeFit5Df$Outcome_type <- factor(outcomeFit5Df$Outcome_type,
@@ -543,11 +543,11 @@ differentModelsPlot <- allModels %>%
 ggsave("../data/plots/figureS7.png", differentModelsPlot,
        width=16, height=10, units="cm")
 
-seroCont <- dplyr::filter(allModels, processing=="Without most seroconverted" &
-                          Outcome_type=="Fatal disease")
-original <- dplyr::filter(allModels, processing=="Full dataset",
-                          Outcome_type=="Fatal disease")
-plot(original$outcomeProp/seroCont$outcomeProp)
+#seroCont <- dplyr::filter(allModels, processing=="Without most seroconverted" &
+#                          Outcome_type=="Fatal disease")
+#original <- dplyr::filter(allModels, processing=="Full dataset",
+#                          Outcome_type=="Fatal disease")
+#plot(original$outcomeProp/seroCont$outcomeProp)
 
 ############################
 ############################
@@ -600,6 +600,7 @@ lastDayDyn <- dplyr::filter(deathDynamics2, daysSinceData==15) %>%
   dplyr::arrange(., deathProp)
 nLoc <- nrow(lastDayDyn)
 
+# see proportion of deaths acquired in las 45 days
 previousDay50 <- dplyr::mutate(deathDynamics2, newerDeaths=100-deathProp) %>%
   dplyr::filter(., daysSinceData==-45 & newerDeaths>50)
 
@@ -608,5 +609,30 @@ for (l in unique(previousDay50$Location)) {
   locDf <- dplyr::filter(previousDay50, Location==l)
   maxDate <- which(locDf$date == max(locDf$date))
   recentDeathsDf <- rbind(recentDeathsDf, locDf[maxDate,])
+}
+
+# Literature plots
+literatureRates <- read.csv("../data/collected_data/literature_rates_estimations.csv",
+                            stringsAsFactors=FALSE)
+
+ihrLit <- dplyr::filter(literatureRates, Type=="IHR")
+
+literatureIHR <- ihrLit %>%
+  dplyr::filter(., meanAge < 60) %>%
+  ggplot(., aes(x=meanAge, y=Proportion, color=Study)) +
+  geom_point(size=locPointSize, alpha=dataAlpha)
+
+
+##########
+# Point estimates of children rates
+##########
+childrenFits <- readRDS("../data/processed_data/8_serology_fits.RDS")
+childrenData <- dplyr::filter(countryDataUncorrected, Age=="0-9")
+
+childrenPosterior <- list()
+for (no in c(1:length(outcome))) {
+  oStr <- outcome[no]
+  childrenPosterior[[oStr]] <- proportion_samples(model=childrenFits$model[[oStr]],
+                                                  ageVec=0, slopeName=NA)
 }
 
