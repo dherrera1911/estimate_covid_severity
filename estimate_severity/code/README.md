@@ -1,5 +1,9 @@
-# Guide to the code
+# Code for "Age-specific rate of severe and critical SARS-CoV-2 infections estimated with multi-country seroprevalence studies"
 
+This is the code used to generate the analysis and figures for the paper
+"Age-specific rate of severe and critical SARS-CoV-2 infections estimated with multi-country seroprevalence studies",
+Daniel Herrera-Esposito, Gustavo de los Campos *BMC Infectious Diseases* vol 22.
+https://link.springer.com/article/10.1186/s12879-022-07262-0
 
 ### 1_literature_values_covid.R
 
